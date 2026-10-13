@@ -1,0 +1,601 @@
+<!doctype html>
+<html lang="ta">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><meta name="theme-color" content="#020608"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><title>இரவு 3:33 — Hospital Horror</title>
+<style>
+:root{--cyan:#8ff6ef;--red:#ff3d57;--panel:rgba(4,12,18,.86)}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#020608;color:#e9f5f4;font-family:system-ui,-apple-system,'Noto Sans Tamil',sans-serif}canvas{display:block}#hud{position:fixed;inset:0;pointer-events:none;z-index:2}.top{position:absolute;top:16px;left:16px;right:16px;display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.chip{background:var(--panel);border:1px solid #315058;padding:9px 12px;border-radius:8px;backdrop-filter:blur(8px);font-size:12px;letter-spacing:.04em}.chip b{color:var(--cyan)}#objective{max-width:330px;line-height:1.55}.bottom{position:absolute;left:16px;bottom:18px;display:flex;gap:8px;align-items:end}.meter{width:150px}.meter label{font-size:10px;color:#a5b8bb;display:block;margin-bottom:5px}.bar{height:6px;background:#1b292d;border-radius:5px;overflow:hidden}.bar i{display:block;height:100%;width:100%;background:var(--cyan);transition:width .15s}#battery i{background:#f3d47c}#message{position:absolute;bottom:19%;left:50%;transform:translateX(-50%);max-width:90vw;text-align:center;background:rgba(0,0,0,.72);padding:10px 18px;border:1px solid #47616a;border-radius:8px;font-size:14px;opacity:0;transition:opacity .2s}#crosshair{position:absolute;left:50%;top:50%;width:10px;height:10px;transform:translate(-50%,-50%);border:1px solid rgba(218,255,250,.85);border-radius:50%}#start,#ending{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(18,39,43,.75),rgba(0,3,6,.98)),linear-gradient(90deg,#050a0c,#0b1418);padding:20px} .card{width:min(620px,100%);border:1px solid #355057;background:rgba(3,9,13,.88);box-shadow:0 20px 90px #000;padding:clamp(22px,5vw,42px);border-radius:14px}.eyebrow{color:var(--red);font-size:11px;letter-spacing:.25em;font-weight:800}.title{font-size:clamp(34px,7vw,62px);line-height:1.08;margin:12px 0;color:#f2ffff;text-shadow:0 0 25px #63dcd144}.title span{color:var(--cyan)}.sub{color:#b5c7c9;line-height:1.8;font-size:14px}.story{border-left:2px solid var(--red);padding:10px 14px;margin:18px 0;color:#d7e2e3;background:#0b1519;font-size:13px;line-height:1.8}button{pointer-events:auto;background:var(--cyan);color:#041012;border:0;padding:13px 20px;border-radius:6px;font-weight:900;cursor:pointer;font-size:13px}button.secondary{background:#16282d;color:#dff7f4;border:1px solid #3d6269}.controls{font-size:11px;color:#91a8ab;line-height:1.8;margin-top:16px}#ending{display:none}#scare{position:fixed;inset:0;z-index:8;pointer-events:none;background:#f4ffff;opacity:0}#scare.active{animation:flash .65s ease-out}@keyframes flash{0%{opacity:.9;background:#eaffff}15%{opacity:.2;background:#d91f38}35%{opacity:.75;background:#000}100%{opacity:0}}#vignette{position:fixed;inset:0;pointer-events:none;z-index:1;background:radial-gradient(ellipse at center,transparent 40%,rgba(0,0,0,.72) 100%)}#mobile{position:fixed;z-index:5;bottom:18px;right:16px;display:none;gap:8px;pointer-events:auto}#mobile button{width:54px;height:54px;border-radius:50%;padding:0;background:#102328dd;border:1px solid #5d858a;color:#e6ffff}#movePad{position:fixed;z-index:5;bottom:20px;left:16px;display:none;gap:7px;pointer-events:auto}#movePad button{width:48px;height:48px;padding:0;background:#102328dd;border:1px solid #5d858a;color:white}@media(max-width:700px){#mobile,#movePad{display:flex}#objective{max-width:210px;font-size:10px}.bottom{bottom:92px}.meter{width:105px}#message{bottom:28%;font-size:12px}.chip{padding:7px 9px}.top{top:9px;left:9px;right:9px}}
+
+/* NIGHT WARD v2: landscape-first cinematic controls */
+#hud .top{top:clamp(8px,1.8vh,18px)}
+#landscapeHint{display:none;position:fixed;inset:0;z-index:20;background:#030607;color:#e9f5f4;align-items:center;justify-content:center;text-align:center;padding:28px;font-weight:700}
+#landscapeHint .inner{max-width:300px}#landscapeHint .rotate{font-size:54px;display:block;margin-bottom:12px;animation:tilt 1.8s ease-in-out infinite alternate}@keyframes tilt{to{transform:rotate(90deg)}}
+#touchControls{display:none;position:fixed;inset:0;z-index:4;pointer-events:none;touch-action:none}
+.joy{position:absolute;bottom:clamp(92px,14vh,126px);width:clamp(92px,12vw,132px);height:clamp(92px,12vw,132px);border-radius:50%;background:radial-gradient(circle,rgba(40,62,66,.10),rgba(4,10,13,.30));border:1px solid rgba(210,235,235,.23);box-shadow:inset 0 0 22px #0005,0 5px 28px #0004;pointer-events:auto;touch-action:none;backdrop-filter:blur(3px)}#moveJoy{left:clamp(18px,3vw,44px)}#lookJoy{right:clamp(18px,3vw,44px)}.joy:before{content:'';position:absolute;inset:18%;border:1px solid #8aa9aa35;border-radius:50%}.knob{position:absolute;left:50%;top:50%;width:39%;height:39%;border-radius:50%;transform:translate(-50%,-50%);background:linear-gradient(145deg,rgba(185,211,211,.72),rgba(37,58,64,.82));border:1px solid rgba(220,245,245,.38);box-shadow:0 4px 15px #0007,inset 0 1px 2px #ffffff33;pointer-events:none}.joyLabel{position:absolute;left:0;right:0;bottom:-22px;text-align:center;font-size:9px;letter-spacing:.2em;color:#b8cece66}
+#actionControls{position:fixed;z-index:7;right:clamp(18px,3vw,44px);top:clamp(150px,22vh,205px);display:none;gap:10px;pointer-events:auto;z-index:7}#actionControls button{width:clamp(44px,7vw,58px);height:clamp(44px,7vw,58px);border-radius:50%;padding:0;background:#071317cc;border:1px solid #9bbbbb66;color:#e8ffff;font-size:11px;box-shadow:0 5px 18px #0009;touch-action:none}#actionControls button:active{background:#315256}
+#nearbyWarning{position:absolute;left:50%;top:15%;transform:translateX(-50%);color:#ffb4b4;text-shadow:0 0 12px #ff001a;letter-spacing:.22em;font-size:10px;font-weight:900;opacity:0;transition:opacity .3s;white-space:nowrap}
+#heartbeatOverlay{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:0;background:radial-gradient(ellipse at center,transparent 28%,#51000b55 100%)}
+@media (pointer:coarse){#touchControls,#actionControls{display:block}#movePad,#mobile{display:none!important}#crosshair{opacity:.45}#objective{max-width:30vw}#actionControls{display:flex}}
+@media (orientation:portrait) and (max-width:900px){#landscapeHint{display:none!important}#start,#ending{display:flex}}
+@media (orientation:landscape) and (max-width:950px){.top{left:12px;right:12px}.bottom{left:12px;bottom:10px}.meter{width:105px}#message{bottom:20%;max-width:65vw}}
+body.terror{animation:terrorShake .12s linear 4}@keyframes terrorShake{0%,100%{transform:translate(0,0)}25%{transform:translate(3px,-2px)}50%{transform:translate(-2px,2px)}75%{transform:translate(2px,1px)}}
+
+
+#missionPanel{position:fixed;z-index:4;top:92px;left:16px;width:210px;padding:10px 12px;border:1px solid #46636a;border-radius:9px;background:rgba(3,10,14,.78);backdrop-filter:blur(7px);pointer-events:none;font-size:11px;line-height:1.5}
+#missionPanel strong{color:#8ff6ef;display:block;font-size:12px;margin-bottom:3px}
+#missionStep{color:#e4eeee}
+#miniMap{position:fixed;z-index:4;right:16px;bottom:105px;width:138px;height:138px;border:1px solid #638087;border-radius:10px;background:rgba(2,8,11,.82);box-shadow:0 4px 22px #0009;pointer-events:none}
+#mapTitle{position:fixed;z-index:5;right:25px;bottom:246px;color:#a5c3c5;font-size:9px;letter-spacing:.14em;pointer-events:none}
+#nearbyWarning{font-weight:900;letter-spacing:.14em;text-shadow:0 0 12px #f22}
+@media(max-width:700px){#missionPanel{top:78px;left:9px;width:145px;padding:7px 8px;font-size:9px}#missionPanel strong{font-size:10px}#miniMap{width:104px;height:104px;right:9px;bottom:105px}#mapTitle{right:14px;bottom:213px;font-size:8px}}
+@media(pointer:coarse) and (orientation:landscape){#missionPanel{top:70px;left:12px;width:170px}#miniMap{width:112px;height:112px;right:12px;bottom:100px}#mapTitle{right:20px;bottom:216px}}
+</style>
+
+<style>
+/* Immersive mobile game pass */
+html,body{overscroll-behavior:none;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+body:fullscreen,body:-webkit-full-screen{width:100vw;height:100dvh;background:#020608}
+canvas{width:100%;height:100%;touch-action:none}
+#touchControls .joy{opacity:.42;transition:opacity .18s ease,transform .18s ease;will-change:transform; -webkit-user-select:none;user-select:none}
+#touchControls .joy:active{opacity:.78}
+#touchControls .knob{transition:box-shadow .12s ease}
+#actionControls button{opacity:.76;backdrop-filter:blur(5px)}
+#actionControls button:active{opacity:1;transform:scale(.96)}
+#hud .top{padding-top:env(safe-area-inset-top)}
+@media (orientation:landscape) and (pointer:coarse){#touchControls{display:block}#moveJoy{left:max(18px,env(safe-area-inset-left));bottom:max(20px,env(safe-area-inset-bottom))}#lookJoy{right:max(18px,env(safe-area-inset-right));bottom:max(20px,env(safe-area-inset-bottom))}#actionControls{right:clamp(18px,3vw,44px);top:clamp(58px,12vh,100px);bottom:auto;gap:8px}#hud .bottom{left:50%;transform:translateX(-50%);bottom:max(8px,env(safe-area-inset-bottom));gap:6px}#hud .bottom .meter{width:clamp(84px,11vw,120px)}#hud .bottom .chip{padding:6px 8px}#hud .top{top:max(8px,env(safe-area-inset-top))}#message{bottom:24%;max-width:42vw}}
+
+@media (pointer:coarse) and (orientation:landscape){#touchControls .joy{touch-action:none}#actionControls button{min-width:44px;min-height:44px}#objective{max-width:min(29vw,300px)}.bottom{z-index:3;pointer-events:none}.joyLabel{bottom:-16px;font-size:8px}#message{left:50%;transform:translateX(-50%);bottom:22%;padding:7px 11px;font-size:11px}}
+#touchControls .joy.engaged{opacity:.78;box-shadow:inset 0 0 22px #0007,0 0 20px #8ff6ef22}
+#pausePanel{display:none;position:fixed;inset:0;z-index:30;align-items:center;justify-content:center;background:rgba(0,0,0,.88);padding:18px;backdrop-filter:blur(8px)}
+#pausePanel .card{max-width:440px}
+.pause-button{position:absolute;left:50%;top:10px;transform:translateX(-50%);width:40px;height:36px;padding:0;background:#071317bb;color:#eaffff;border:1px solid #71909488;border-radius:9px;z-index:8;pointer-events:auto}
+@media (pointer:coarse) and (orientation:landscape){#pauseButton{left:50%;top:8px}.card{padding:clamp(14px,3vh,26px)}#start .story{max-height:23vh;overflow:auto;margin:10px 0;padding:8px 12px;font-size:12px;line-height:1.55}#start .title{font-size:clamp(28px,5vw,44px);margin:6px 0}#start .sub{margin:6px 0;font-size:12px}#start .controls{margin-top:8px;font-size:10px;line-height:1.45}}
+</style>
+<style>
+/* v6: usable landscape safe zones and terror pass */
+:root{--safe-b:env(safe-area-inset-bottom,0px);--safe-l:env(safe-area-inset-left,0px);--safe-r:env(safe-area-inset-right,0px)}
+#touchControls .joy{bottom:calc(clamp(112px,18vh,156px) + var(--safe-b));width:clamp(112px,13.5vw,146px);height:clamp(112px,13.5vw,146px);opacity:.38}
+#moveJoy{left:calc(clamp(20px,4vw,54px) + var(--safe-l))}
+#lookJoy{right:calc(clamp(20px,4vw,54px) + var(--safe-r))}
+#actionControls{top:clamp(150px,23vh,218px);right:calc(clamp(20px,4vw,54px) + var(--safe-r));gap:clamp(8px,1.6vw,16px)}
+#actionControls button{width:clamp(48px,6.4vw,62px);height:clamp(48px,6.4vw,62px);font-size:10px}
+#hud .top{z-index:3}
+#objective{max-width:min(34vw,430px);line-height:1.45}
+.bottom{z-index:3;bottom:calc(8px + var(--safe-b));left:50%;transform:translateX(-50%);display:flex;gap:10px;justify-content:center}
+.meter{width:clamp(118px,15vw,170px)}
+#message{z-index:3;bottom:clamp(27%,32vh,38%);max-width:62vw}
+@media (orientation:landscape) and (max-height:520px){
+ #touchControls .joy{bottom:calc(88px + var(--safe-b));width:104px;height:104px}
+ #actionControls{top:clamp(110px,20vh,145px)}
+ .bottom{bottom:calc(4px + var(--safe-b))}
+ #actionControls button{width:44px;height:44px}
+ #message{bottom:24%}
+}
+@media (orientation:landscape) and (min-height:521px){
+ #touchControls .joy{bottom:calc(clamp(112px,18vh,156px) + var(--safe-b))}
+}
+#nearbyWarning{font-size:clamp(10px,1.2vw,14px);text-shadow:0 0 8px #f00,0 0 22px #a00012;letter-spacing:.18em}
+#heartbeatOverlay{transition:opacity .18s}
+body.terror #vignette{background:radial-gradient(ellipse at center,transparent 8%,rgba(70,0,8,.96) 100%)}
+</style>
+
+
+<style>
+/* v10: cinematic game-first title screen and polished HUD */
+#start.start-screen{display:flex;align-items:stretch;justify-content:stretch;padding:clamp(12px,2.4vw,36px);overflow:auto;background:#03080b url("storyboard-reference.png") center/cover no-repeat;isolation:isolate}
+#start.start-screen:before{content:"";position:fixed;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(1,5,8,.96) 0%,rgba(1,6,9,.82) 39%,rgba(1,5,8,.48) 72%,rgba(1,5,8,.72) 100%),linear-gradient(0deg,rgba(0,0,0,.86),transparent 45%,rgba(0,0,0,.35));backdrop-filter:saturate(.75)}
+#start.start-screen:after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.16;background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(150,220,220,.08) 4px,transparent 5px);mix-blend-mode:screen}
+#start .start-shell{width:min(1280px,100%);min-height:min(760px,calc(100dvh - 28px));margin:auto;display:grid;grid-template-columns:minmax(0,1.18fr) minmax(300px,.82fr);gap:clamp(14px,2.4vw,34px);align-items:stretch}
+#start .start-main{display:flex;flex-direction:column;justify-content:center;padding:clamp(8px,2vw,26px) 0;min-width:0}
+#start .brandline{display:flex;align-items:center;gap:10px;color:#b7c9cb;font-size:10px;letter-spacing:.34em;text-transform:uppercase;font-weight:800}
+#start .brandline .sigil{display:grid;place-items:center;width:36px;height:36px;border:1px solid #a52e39;border-radius:50%;color:#ff5964;font-size:19px;box-shadow:0 0 24px #e521332b}
+#start .title{font-size:clamp(44px,7.6vw,104px);line-height:.92;letter-spacing:-.055em;margin:20px 0 12px;color:#f2f6f3;text-shadow:0 6px 35px #000,0 0 34px #86e9e52b;font-weight:950}
+#start .title span:first-child{color:#ff4a57;text-shadow:0 0 28px #ff263044}
+#start .title span:last-child{display:inline-block!important;margin-top:14px;font-size:clamp(17px,2.3vw,30px)!important;letter-spacing:.22em;color:#dce9e8!important;font-weight:800}
+#start .tagline{font-size:clamp(13px,1.5vw,18px);color:#9fb6b8;letter-spacing:.06em;margin:10px 0 22px;max-width:590px}
+#start .story{position:relative;max-width:610px;background:linear-gradient(100deg,rgba(7,17,21,.88),rgba(5,12,16,.57));border:1px solid #496268;border-left:3px solid #e64250;padding:clamp(13px,1.8vw,22px);margin:0 0 20px;color:#d7e2e1;font-size:clamp(12px,1.12vw,14px);line-height:1.85;box-shadow:0 16px 40px #0005}
+#start .story:before{content:'CASE FILE 03:33  /  CLASSIFIED';display:block;font-size:9px;letter-spacing:.2em;color:#ff6974;font-weight:900;margin-bottom:7px}
+#start .start-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+#start #play{position:relative;min-width:min(300px,100%);padding:16px 24px;border:1px solid #ff8b91;border-radius:3px;background:linear-gradient(110deg,#b91f31,#f04450 58%,#9f1727);color:#fff;font-size:13px;letter-spacing:.1em;text-align:left;box-shadow:0 9px 30px #a9192b40;transition:transform .18s,filter .18s,box-shadow .18s}
+#start #play:before{content:'▶';margin-right:14px;color:#fff}
+#start #play:after{content:'ENTER THE NIGHT SHIFT  ↗';display:block;margin:6px 0 0 27px;color:#ffdadd;font-size:8px;letter-spacing:.2em}
+#start #play:hover{transform:translateY(-2px);filter:brightness(1.12);box-shadow:0 14px 38px #e321354d}
+#start #soundToggle{padding:13px 17px;border-radius:3px;min-width:128px}
+#start .microcopy{font-size:9px;color:#84999c;letter-spacing:.12em;margin-top:14px;line-height:1.7}
+#start .start-side{display:flex;flex-direction:column;justify-content:center;gap:12px;min-width:0}
+#start .side-panel{background:linear-gradient(135deg,rgba(3,12,16,.88),rgba(4,10,13,.67));border:1px solid #3c555b;box-shadow:0 18px 50px #0005;backdrop-filter:blur(9px)}
+#start .panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid #34494e;color:#dbe8e8;font-size:10px;font-weight:900;letter-spacing:.16em}
+#start .live-dot{display:inline-flex;align-items:center;gap:6px;color:#ff7a83;font-size:8px;letter-spacing:.14em}
+#start .live-dot:before{content:'';width:6px;height:6px;border-radius:50%;background:#ff394d;box-shadow:0 0 12px #ff334f;animation:wardPulse 1.4s infinite}
+@keyframes wardPulse{50%{opacity:.25;box-shadow:0 0 2px #ff334f}}
+#start .mission-list{list-style:none;padding:5px 14px 10px;margin:0;counter-reset:mission}
+#start .mission-list li{counter-increment:mission;display:grid;grid-template-columns:27px 1fr;gap:9px;padding:10px 0;border-bottom:1px solid #26383c;color:#aabdbf;font-size:11px;line-height:1.45}
+#start .mission-list li:last-child{border-bottom:0}
+#start .mission-list li:before{content:counter(mission,decimal-leading-zero);color:#ff6570;font-weight:900;font-size:11px;letter-spacing:.08em}
+#start .mission-list b{display:block;color:#e6eeee;font-size:11px;margin-bottom:2px}
+#start .side-bottom{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#start .info-tile{padding:13px 14px;min-height:86px}
+#start .info-tile .tile-kicker{color:#8ff6ef;font-size:8px;letter-spacing:.2em;font-weight:900}
+#start .info-tile b{display:block;color:#e7f1ef;font-size:12px;margin:6px 0 3px}
+#start .info-tile span{display:block;color:#82999c;font-size:10px;line-height:1.5}
+#start .controls{font-size:9px;color:#94a9ab;line-height:1.8;margin-top:14px;letter-spacing:.025em}
+#start .controls b{color:#d6e8e7}
+/* cleaner in-game hierarchy */
+#hud .chip{border-radius:4px;background:rgba(2,9,13,.76);border-color:#3a555b;box-shadow:0 5px 22px #0002}
+#hud .top .chip{font-size:11px;letter-spacing:.06em}
+#objective{border-left:2px solid #e34250}
+#missionPanel{border-radius:3px;background:rgba(2,9,13,.82);border-color:#415a60;box-shadow:0 8px 30px #0003}
+#miniMap{border-radius:3px;border-color:#526d72}
+#message{border-radius:3px;border-color:#5b777b;box-shadow:0 12px 38px #0008;backdrop-filter:blur(8px)}
+#pausePanel .card,#ending .card{border-radius:4px;border-color:#4a6469;background:linear-gradient(145deg,rgba(5,15,19,.97),rgba(2,6,9,.98))}
+@media(max-width:760px){#start.start-screen{padding:10px;overflow-y:auto;align-items:flex-start}#start .start-shell{grid-template-columns:1fr;gap:12px;min-height:0;margin:auto}#start .start-main{padding:12px 2px 0}#start .title{font-size:clamp(40px,12vw,68px);margin:13px 0 7px}#start .tagline{margin:6px 0 12px}#start .story{padding:12px;margin-bottom:12px;line-height:1.65}#start .start-side{gap:10px}#start .mission-list{display:grid;grid-template-columns:1fr 1fr;column-gap:15px}#start .mission-list li{font-size:10px}#start .side-bottom{grid-template-columns:1fr 1fr}#start .controls{margin-top:10px}#start #play{min-width:190px;flex:1}}
+@media(max-height:560px) and (orientation:landscape){#start.start-screen{padding:8px;overflow:hidden}#start .start-shell{grid-template-columns:minmax(0,1.05fr) minmax(270px,.95fr);gap:16px;min-height:0;height:calc(100dvh - 16px)}#start .start-main{padding:2px 0;justify-content:center}#start .brandline .sigil{width:27px;height:27px}#start .title{font-size:clamp(34px,6.8vh,58px);margin:8px 0}#start .title span:last-child{font-size:clamp(14px,2.4vh,20px)!important;margin-top:8px}#start .tagline{font-size:11px;margin:5px 0 9px}#start .story{font-size:10px;line-height:1.5;padding:9px 11px;margin-bottom:10px}#start .story:before{margin-bottom:3px;font-size:8px}#start #play{padding:10px 14px;min-width:190px;font-size:10px}#start #play:after{margin-top:3px;font-size:7px}#start #soundToggle{padding:10px 12px;font-size:10px}#start .controls{font-size:8px;line-height:1.5;margin-top:7px}#start .start-side{gap:8px}#start .panel-head{padding:8px 10px;font-size:8px}#start .mission-list{padding:2px 10px 4px}#start .mission-list li{padding:5px 0;font-size:9px;grid-template-columns:22px 1fr;gap:6px}#start .mission-list b{font-size:9px;margin-bottom:1px}#start .info-tile{min-height:58px;padding:8px 10px}#start .info-tile b{font-size:10px;margin:3px 0}#start .info-tile span{font-size:8px}}
+
+/* v11: remove conflicting legacy HUD layers; keep gameplay view clear */
+html,body{background:#020609}
+body>canvas{position:fixed!important;inset:0!important;width:100%!important;height:100%!important;z-index:0!important;display:block}
+#hud{z-index:3}
+#hud .top{height:auto;min-height:0;border:0!important;outline:0!important;box-shadow:none!important;align-items:flex-start}
+#hud .top:before,#hud .top:after{display:none!important;content:none!important}
+#hud .top .chip{max-width:min(34vw,340px);box-shadow:0 8px 28px #0005}
+#missionPanel{display:none!important}
+#mapFrame{display:none;position:fixed;z-index:8;right:clamp(12px,2vw,28px);top:clamp(84px,15vh,132px);width:clamp(150px,20vw,230px);padding:8px;background:rgba(2,8,11,.94);border:1px solid #49686d;box-shadow:0 12px 34px #0009;pointer-events:none}
+#mapFrame.open{display:block}
+#mapTitle{position:static!important;margin:0 0 6px;font-size:9px;letter-spacing:.13em;color:#b9d3d4}
+#miniMap{position:static!important;display:block;width:100%!important;height:auto!important;aspect-ratio:1;border:1px solid #344f55;box-shadow:none;background:#030a0d}
+.map-toggle{position:fixed;z-index:9;left:clamp(12px,2vw,28px);top:clamp(76px,12vh,100px);display:none;padding:8px 11px;min-width:60px;min-height:36px;background:rgba(4,15,19,.86);color:#cde8e7;border:1px solid #537176;border-radius:5px;font-size:10px;letter-spacing:.12em;pointer-events:auto}
+.map-toggle span{color:#8ff6ef;margin-left:5px}
+#launchWarning{display:none;position:fixed;inset:0;z-index:100;background:#020608f5;align-items:center;justify-content:center;padding:22px;font-family:system-ui,sans-serif}
+#launchWarning .launch-card{width:min(460px,100%);padding:24px;border:1px solid #4c686e;background:#071115;color:#e9f5f4;box-shadow:0 20px 70px #000}
+#launchWarning b{color:#ff5268;letter-spacing:.14em}
+#launchWarning p{color:#b8cacc;line-height:1.6;font-size:14px}
+#launchWarning code{display:block;padding:12px;background:#020609;color:#8ff6ef;overflow-wrap:anywhere}
+#launchWarning button{margin-top:10px}
+@media(pointer:coarse){.map-toggle{display:block}#actionControls{z-index:7}#mapFrame{right:12px;top:clamp(120px,23vh,175px);width:clamp(132px,19vw,190px)}#hud .bottom{gap:6px}#hud .bottom .meter{width:clamp(88px,12vw,126px)}}
+@media(orientation:landscape) and (max-height:520px){#mapFrame{top:100px;width:130px}#mapToggle{top:72px}#hud .top .chip{padding:7px 9px}#hud .bottom{bottom:6px}}
+
+/* v12 FINAL POLISH: intentional hierarchy, legible world, no stacked HUD panels */
+#start.start-screen{isolation:isolate;overflow:auto;background:#020608}
+#start.start-screen:before{content:"";position:absolute;inset:0;z-index:-2;background-image:linear-gradient(90deg,rgba(1,5,8,.55),rgba(1,5,8,.76) 45%,rgba(1,5,8,.88)),url('storyboard-reference.png');background-size:cover;background-position:center;background-repeat:no-repeat;filter:saturate(.78) contrast(1.08)}
+#start.start-screen:after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(0deg,rgba(1,4,6,.93),transparent 38%,rgba(1,4,6,.38)),radial-gradient(ellipse at 22% 45%,transparent 0,rgba(0,0,0,.32) 78%)}
+#start .start-shell{position:relative;width:min(1180px,100%);min-height:min(660px,calc(100dvh - 36px));grid-template-columns:minmax(0,1.12fr) minmax(300px,.88fr);gap:clamp(20px,4vw,54px);padding:clamp(18px,3vw,42px);border:1px solid rgba(143,246,239,.22);background:linear-gradient(115deg,rgba(2,8,11,.72),rgba(2,8,11,.42));box-shadow:0 30px 100px #0009;backdrop-filter:blur(2px)}
+#start .start-main{justify-content:center;min-width:0}
+#start .brandline{color:#c3d5d5}
+#start .title{font-size:clamp(48px,7.5vw,96px);letter-spacing:-.045em;text-shadow:0 6px 36px #000,0 0 28px #ff273633}
+#start .title span:first-of-type{color:#ff4659}
+#start .title span:last-child{display:inline-block;color:#eaf5f3;font-size:clamp(19px,2.3vw,29px);letter-spacing:.17em;margin-top:12px}
+#start .tagline{color:#b6cece;font-size:clamp(13px,1.4vw,17px);letter-spacing:.04em}
+#start .story{background:rgba(3,10,13,.72);border-left:3px solid #f04454;box-shadow:0 12px 35px #0005;backdrop-filter:blur(8px)}
+#start .start-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+#start #play{background:linear-gradient(110deg,#e52e43,#a90f24);color:#fff;border:1px solid #ff7880;padding:15px 24px;min-width:220px;box-shadow:0 8px 28px #d2183033;letter-spacing:.08em;transition:transform .18s,filter .18s}
+#start #play:hover{filter:brightness(1.15);transform:translateY(-2px)}
+#start #soundToggle{background:rgba(7,20,24,.88);border-color:#48656a}
+#start .start-side{align-self:center}
+#start .side-panel{background:rgba(2,8,11,.79);border-color:#3c5b60;box-shadow:0 15px 50px #0007}
+#start .mission-list li{padding:12px 0;font-size:12px}
+#start .mission-list b{font-size:11px;letter-spacing:.06em}
+#hud .top{display:block;pointer-events:none}
+#hud .top>.chip:first-of-type{position:absolute;left:0;top:0;max-width:36vw}
+#hud .top>#objective{position:absolute;right:0;top:0;max-width:min(33vw,340px);border-left:2px solid #e34250}
+#pauseButton.pause-button{left:auto;right:calc(min(33vw,340px) + 18px);top:8px;transform:none;width:38px;height:38px;background:rgba(4,13,17,.82);border-color:#547176;box-shadow:0 4px 16px #0005}
+#hud .bottom{gap:8px}
+#hud .bottom .chip{background:rgba(2,8,11,.7);border-color:#344c51;backdrop-filter:blur(7px)}
+#hud .bottom .meter{width:clamp(90px,12vw,142px)}
+#crosshair{width:8px;height:8px;border-color:rgba(210,247,242,.68)}
+#message{background:rgba(2,8,11,.86);border-color:#45666b;box-shadow:0 10px 35px #0008}
+#mapToggle{top:clamp(68px,11vh,92px);left:clamp(12px,2vw,26px);right:auto;border-radius:3px;letter-spacing:.1em}
+#mapFrame{top:50%!important;left:50%!important;right:auto!important;bottom:auto!important;transform:translate(-50%,-50%);width:min(36vh,245px)!important;max-width:68vw;padding:10px;z-index:12;background:rgba(2,8,11,.96);box-shadow:0 24px 80px #000b}
+#mapFrame.open{display:block}
+#mapFrame #miniMap{width:100%!important;height:auto!important}
+#touchControls .joy{bottom:calc(clamp(112px,17vh,148px) + var(--safe-b));opacity:.34}
+#touchControls .joy.engaged{opacity:.78}
+#actionControls{top:clamp(60px,11vh,92px)!important;right:clamp(14px,2.6vw,34px)!important;flex-wrap:wrap;justify-content:flex-end;max-width:240px}
+#actionControls button{width:clamp(43px,5.2vw,54px);height:clamp(43px,5.2vw,54px);font-size:9px;background:rgba(4,13,17,.78)}
+#nearbyWarning{top:18%;z-index:5}
+#launchWarning{backdrop-filter:blur(8px)}
+@media(max-width:760px){#start.start-screen{padding:10px;align-items:center}#start .start-shell{grid-template-columns:1fr;width:100%;min-height:0;height:auto;gap:14px;padding:16px;background:rgba(2,8,11,.56)}#start .start-main{padding:0}#start .title{font-size:clamp(42px,11vw,66px)}#start .title span:last-child{font-size:clamp(15px,4vw,22px)}#start .start-side{gap:8px}#start .mission-list{grid-template-columns:1fr 1fr;column-gap:12px}#start .mission-list li{padding:7px 0;font-size:10px}#start .side-bottom{grid-template-columns:1fr 1fr}#start .info-tile{min-height:0;padding:10px}#start .controls{font-size:9px}#hud .top>.chip:first-of-type{max-width:35vw}#hud .top>#objective{max-width:38vw;font-size:10px}#pauseButton.pause-button{right:calc(38vw + 12px);top:8px}#hud .bottom .meter{width:clamp(78px,15vw,112px)}#actionControls{top:clamp(60px,10vh,82px)!important;right:12px!important;max-width:210px;gap:6px}#actionControls button{width:44px;height:44px}}
+@media(orientation:landscape) and (max-height:520px){#start.start-screen{padding:8px;align-items:center}#start .start-shell{height:calc(100dvh - 16px);min-height:0;grid-template-columns:minmax(0,1.1fr) minmax(270px,.9fr);gap:16px;padding:14px 20px;overflow:hidden}#start .title{font-size:clamp(32px,6.5vh,52px)}#start .title span:last-child{font-size:clamp(13px,2.3vh,18px);margin-top:5px}#start .tagline{font-size:10px;margin:4px 0 8px}#start .story{font-size:10px;line-height:1.45;padding:8px 10px;margin:8px 0}#start .mission-list li{padding:6px 0;font-size:9px}#start .panel-head{padding:8px 10px}#start .side-bottom .info-tile{padding:8px 10px;min-height:54px}#start #play{padding:10px 15px;min-width:180px;font-size:10px}#start #soundToggle{padding:10px}#start .controls{font-size:8px;margin-top:7px}#touchControls .joy{bottom:calc(88px + var(--safe-b));width:104px;height:104px}#actionControls{top:62px!important}#hud .bottom{bottom:5px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important}}
+
+</style>
+</head>
+<body>
+<div id="start" class="start-screen"><div class="start-shell">
+<section class="start-main">
+<div class="brandline"><span class="sigil">✚</span><span>Interactive survival horror · Tamil original</span></div>
+<h1 class="title">இரவு <span>3:33</span><br><span>THE NIGHT WARD</span></h1>
+<p class="tagline">நீ இங்கே தனியாக இல்லை. இரவு உன்னை கவனித்துக்கொண்டிருக்கிறது.</p>
+<div class="story">2009-ல் ஸ்ரீ லக்ஷ்மி நினைவு மருத்துவமனையில் ஏற்பட்ட தீ விபத்து பல உயிர்களைப் பறித்தது. உன் தங்கை மீரா காணாமல் போனாள். 03:33 AM-க்கு, அவளுடைய கடைசி பதிவுகள் இன்னும் இந்த மருத்துவமனையில் ஒலிக்கின்றன. மூன்று நோயாளர் பதிவுகள், வார்டு 13 சாவி, அறுவை அறை ஃபியூஸ்—அவற்றைக் கண்டுபிடித்து உண்மையை வெளிக்கொணர். செவிலியர் உன்னைத் தேடுகிறாள். ஒளி உனக்கு வழிகாட்டும்; அதுவே அவளையும் உன்னிடம் அழைக்கலாம்.</div>
+<div class="start-actions"><button id="play">இரவு தொடங்கு · START GAME</button><button id="soundToggle" class="secondary">SOUND: ON</button></div>
+<div class="controls"><b>DESKTOP</b> &nbsp; WASD move · Mouse look · E interact · F torch · Shift sprint · C crouch · Esc pause<br><b>MOBILE LANDSCAPE</b> &nbsp; Left joystick move · Right joystick look · USE · TORCH · RUN · HIDE</div>
+<div class="microcopy">HEADPHONES RECOMMENDED &nbsp; / &nbsp; CHECK THE SHADOWS, NOT JUST THE MAP</div>
+</section>
+<aside class="start-side">
+<div class="side-panel"><div class="panel-head"><span>NIGHT SHIFT · CASE 03:33</span><span class="live-dot">SIGNAL ACTIVE</span></div>
+<ol class="mission-list"><li><div><b>ENTER THE HOSPITAL</b>Find a working flashlight before the corridor goes dark.</div></li><li><div><b>EMERGENCY WARD</b>Collect three patient records and uncover the first lie.</div></li><li><div><b>WARD 13</b>Find the key and solve the 03:33 keypad clue.</div></li><li><div><b>THEATRE & MORGUE</b>Recover the fuse and Meera's hidden recording.</div></li><li><div><b>ESCAPE OR REVEAL</b>Unlock the exit while the nurse is hunting you.</div></li></ol></div>
+<div class="side-bottom"><div class="side-panel info-tile"><div class="tile-kicker">SURVIVAL SYSTEMS</div><b>Hide · Sprint · Conserve</b><span>Flashlight battery, fear, health and hiding places.</span></div><div class="side-panel info-tile"><div class="tile-kicker">THREAT LEVEL</div><b>She hears you.</b><span>Flickering lights, whispers and a moving ghost signal.</span></div></div>
+</aside></div></div>
+<div id="launchWarning" role="status"><div class="launch-card"><b>OPEN THE GAME PROPERLY</b><p>Chrome blocks the 3D engine when this HTML is opened from Downloads. Run it from a local web server or HTTPS address to see the hospital correctly.</p><code>python -m http.server 8000</code><p>Then open <strong>http://localhost:8000</strong> from the game folder.</p><button id="dismissLaunchWarning" type="button">UNDERSTOOD</button></div></div><div id="pausePanel"><div class="card"><div class="eyebrow">PAUSED · இடைநிறுத்தம்</div><h2 class="title">THE NIGHT WARD</h2><p class="sub">மீண்டும் தொடரவா, அல்லது வெளியேறவா?</p><button id="resumeGame">தொடரவும் · RESUME</button> <button id="restartGame" class="secondary">மீண்டும் தொடங்கு</button> <button id="pauseSound" class="secondary">SOUND: ON</button> <button id="quitGame" class="secondary">வெளியேறு · MENU</button></div></div><div id="ending"><div class="card"><div class="eyebrow">CASE FILE: 03:33</div><h2 class="title" id="endTitle">நீ தப்பித்துவிட்டாய்.</h2><p id="endText" class="sub"></p><button id="again">மீண்டும் விளையாடு · PLAY AGAIN</button></div></div>
+<div id="hud"><div class="top"><button id="pauseButton" class="pause-button" aria-label="Pause game">Ⅱ</button><div class="chip">WARD <b id="ward">EMERGENCY</b><br><span id="clock">03:33 AM</span></div><div class="chip" id="objective">MISSION: <b>Find flashlight</b><br>Records: <b id="found">0 / 3</b></div></div><div id="crosshair"></div><div class="chip" style="position:absolute;left:50%;top:calc(50% + 18px);transform:translateX(-50%);font-size:10px;opacity:.62">E · INTERACT &nbsp; / &nbsp; KEEP YOUR FLASHLIGHT READY</div><div class="bottom"><div class="chip meter"><label>உயிர் நிலை · HEARTBEAT</label><div class="bar"><i id="healthBar"></i></div></div><div class="chip meter" id="battery"><label>TORCH BATTERY</label><div class="bar"><i id="batteryBar"></i></div></div><div class="chip meter"><label>பயம் · FEAR</label><div class="bar"><i id="fearBar" style="width:0%;background:#ff3d57"></i></div></div></div><div id="inventoryPanel" class="chip"><b>INVENTORY</b><div id="inventoryItems">Empty</div></div><div id="message"></div></div><div id="vignette"></div><div id="hiddenOverlay"></div><div id="scare"></div><div id="movePad"><button data-move="forward">▲</button><button data-move="left">◀</button><button data-move="back">▼</button><button data-move="right">▶</button></div><div id="mobile"><button id="interact">E</button><button id="torch">F</button><button id="run">RUN</button></div>
+
+
+<div id="missionPanel" aria-hidden="true"><strong>CASE 03:33 · OBJECTIVE</strong><div id="missionStep">1. Find 3 patient records</div><div id="missionProgress">Evidence: 0 / 3</div></div><button id="mapToggle" class="map-toggle" type="button" aria-expanded="false">MAP <span>＋</span></button><div id="mapFrame" aria-label="Hospital map"><div id="mapTitle">WARD MAP · RED = NURSE</div><canvas id="miniMap" width="220" height="220" aria-label="Hospital minimap"></canvas></div><div id="heartbeatOverlay"></div>
+<div id="nearbyWarning">DON'T TURN AROUND</div>
+<div id="touchControls"><div class="joy" id="moveJoy"><div class="knob" id="moveKnob"></div><div class="joyLabel">MOVE</div></div><div class="joy" id="lookJoy"><div class="knob" id="lookKnob"></div><div class="joyLabel">LOOK</div></div></div>
+<div id="actionControls"><button id="touchInteract">USE<br>E</button><button id="touchTorch">TORCH<br>F</button><button id="touchRun">RUN</button><button id="touchHide">HIDE</button></div>
+
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
+const $=id=>document.getElementById(id);let currentZone='',zoneCueAt=0,lastAttackAt=0,lastManifestAt=0,scene,camera,renderer,clock,listener,started=false,paused=false,ended=false,torchOn=false,soundOn=true,health=100,battery=100,found=0,flashCooldown=0,scareCooldown=0,messageTimer=0,elapsed=0,ghostState='patrol',ghostTarget=null,ghostSpeed=1.7,move={forward:false,back:false,left:false,right:false,run:false,crouch:false,axisX:0,axisY:0},touchLook=null,audioCtx,masterGain,ambientOsc=[],ambientTimer=null,heartbeatTimer=0,flickerLights=[],lastScream=0,player={x:0,z:8,yaw:0,pitch:0},ghost,torchLight,worldObjects=[],colliders=[],interactables=[],records=[],exitDoor,doorOpen=false,exitUnlocked=false,gameStart=0,torchFlickerUntil=0,hasFlashlight=false,hasKey=false,hasFuse=false,hasSisterEvidence=false,isHidden=false,hideUntil=0,fear=0,pathNodes=[],pathRefresh=0,lastGhostStep=0,whisperAudio=null,objectiveStage=0,hasFuseInserted=false,lastObjectiveMarkup='';
+const mats={wall:new THREE.MeshStandardMaterial({color:0x344246,roughness:.94,emissive:0x070c0d,emissiveIntensity:.28}),floor:new THREE.MeshStandardMaterial({color:0x293639,roughness:.84,metalness:.08,emissive:0x050a0b,emissiveIntensity:.2}),ceiling:new THREE.MeshStandardMaterial({color:0x303a3d,roughness:1,emissive:0x080d0e,emissiveIntensity:.2}),metal:new THREE.MeshStandardMaterial({color:0x526166,metalness:.55,roughness:.55}),bed:new THREE.MeshStandardMaterial({color:0x66767a,metalness:.25,roughness:.65}),sheet:new THREE.MeshStandardMaterial({color:0xbac5bf,roughness:1}),red:new THREE.MeshStandardMaterial({color:0x55131b,emissive:0x290309}),glow:new THREE.MeshStandardMaterial({color:0x9efff5,emissive:0x2fbbb0}),dark:new THREE.MeshStandardMaterial({color:0x060b0d,roughness:1})};
+function box(w,h,d,mat,x,y,z,collide=true){let m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;scene.add(m);worldObjects.push(m);if(collide)colliders.push({x,z,hw:w/2,hd:d/2});return m}
+function light(color,intensity,distance,x,y,z){let l=new THREE.PointLight(color,intensity,distance,2);l.position.set(x,y,z);scene.add(l);return l}
+
+function addPickup(x,z,type,label,detail){
+ const g=new THREE.Group();
+ const glowColor=type==='key'?0xffb85c:type==='fuse'?0x8ff6ef:type==='flashlight'?0xffd28a:0xff3d57;
+ const core=new THREE.Mesh(type==='key'?new THREE.TorusGeometry(.13,.025,7,18):new THREE.BoxGeometry(.22,.09,.34),new THREE.MeshStandardMaterial({color:glowColor,emissive:glowColor,emissiveIntensity:.8,roughness:.45,metalness:type==='key'?.65:.15}));
+ core.rotation.x=type==='key'?Math.PI/2:0;core.position.y=.82;g.add(core);
+ const glow=new THREE.PointLight(glowColor,.45,2.8);glow.position.y=1;g.add(glow);
+ g.position.set(x,0,z);scene.add(g);worldObjects.push(g);
+ interactables.push({mesh:g,x,z,type,title:label,content:detail,used:false});
+ return g;
+}
+function addHideSpot(x,z,label){
+ const g=new THREE.Group();
+ const shell=new THREE.Mesh(new THREE.BoxGeometry(.95,2.15,.72),new THREE.MeshStandardMaterial({color:0x20292b,roughness:.92,metalness:.22}));
+ shell.position.y=1.08;g.add(shell);
+ const door=new THREE.Mesh(new THREE.BoxGeometry(.78,1.95,.055),new THREE.MeshStandardMaterial({color:0x111719,roughness:.95,metalness:.15}));
+ door.position.set(0,1.08,.39);g.add(door);
+ for(let y=.45;y<1.8;y+=.45){const seam=new THREE.Mesh(new THREE.BoxGeometry(.75,.025,.06),new THREE.MeshStandardMaterial({color:0x485356,roughness:1}));seam.position.set(0,y,.425);g.add(seam)}
+ g.position.set(x,0,z);scene.add(g);worldObjects.push(g);colliders.push({x,z,hw:.5,hd:.42});
+ interactables.push({mesh:g,x,z,type:'hide',title:label,content:'உள்ளே ஒளிந்து மூச்சை அடக்கிக்கொள்.',used:false});
+}
+function updateMissionUI(){
+ const stageText=!hasFlashlight?'1. Find a working flashlight':(!found?'2. Emergency ward: find record 01':(!hasKey?'3. Ward 13: find the key':(!ward13Unlocked?'3. Solve Ward 13 code · 0333':(!hasFuse?'4. O.T.: recover the fuse':(!hasSisterEvidence?'4. Morgue: find Meera clue':'5. Escape while hunted')))));
+ const node=$('missionStep');if(node)node.textContent=stageText;
+ const obj=$('objective');const markup='குறிக்கோள்: <b>'+stageText+'</b><br>பதிவுகள்: <b id="found">'+found+' / 3</b>';if(obj&&markup!==lastObjectiveMarkup){obj.innerHTML=markup;lastObjectiveMarkup=markup;}
+ const progress=$('missionProgress');if(progress)progress.textContent=`Records ${found}/3 · ${hasKey?'Key ✓':'Key —'} · ${hasFuse?'Fuse ✓':'Fuse —'}`;
+ if(found>=3&&hasKey&&hasFuse&&!exitUnlocked){exitUnlocked=true;exitDoor.material=new THREE.MeshStandardMaterial({color:0x8c2630,emissive:0x6b101b,emissiveIntensity:.7});say('அவசர வெளியேறும் கதவு மின்சாரத்துடன் திறக்கத் தயாராக உள்ளது. ஓடு!',3200)}const inv=$('inventoryItems');if(inv){const items=[];if(hasFlashlight)items.push('Flashlight');if(hasKey)items.push('Ward 13 key');if(hasFuse)items.push('Fuse');if(ward13Unlocked)items.push('Ward 13 unlocked');if(hasSisterEvidence)items.push('Meera evidence');inv.textContent=items.join(' · ')||'Empty'}
+}
+
+function makeRoom(){scene=new THREE.Scene();scene.background=new THREE.Color(0x030708);scene.fog=new THREE.FogExp2(0x071013,.018);camera=new THREE.PerspectiveCamera(74,innerWidth/innerHeight,.08,90);camera.rotation.order='YXZ';renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.35));renderer.shadowMap.enabled=!matchMedia('(pointer:coarse)').matches;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;renderer.outputColorSpace=THREE.SRGBColorSpace;document.body.appendChild(renderer.domElement);clock=new THREE.Clock();scene.add(new THREE.HemisphereLight(0x82999d,0x111719,.78));scene.add(new THREE.AmbientLight(0x3a494c,.48));
+// Soft emergency fill keeps the starting route readable before the player finds the torch.
+light(0x8baeb1,.95,8,0,2.2,5.1);light(0x9ab8b8,.55,5,0,2.0,8.0);
+// A connected cross-shaped hospital floor plan with a main corridor and three wards.
+box(26,.35,26,mats.floor,0,-.2,0,false);box(26,.35,26,mats.ceiling,0,4.2,0,false);
+// outer walls
+box(26,4,.35,mats.wall,0,1.8,-13);box(26,4,.35,mats.wall,0,1.8,13);box(.35,4,26,mats.wall,-13,1.8,0);box(.35,4,26,mats.wall,13,1.8,0);
+// room dividers with openings
+box(7,4,.28,mats.wall,-9.3,1.8,-3);box(7,4,.28,mats.wall,9.3,1.8,-3);box(6,4,.28,mats.wall,-10,1.8,5);box(6,4,.28,mats.wall,10,1.8,5);
+// cross corridor dividers leave doorway gaps
+box(.28,4,4.4,mats.wall,-5.5,1.8,-8.5);box(.28,4,4.4,mats.wall,5.5,1.8,-8.5);box(.28,4,6,mats.wall,-5.5,1.8,8);box(.28,4,6,mats.wall,5.5,1.8,8);
+// doors and set dressing
+for(let z=-10;z<=10;z+=5){let lamp=light(0xb6e2df,1.65,10,0,3.45,z);lamp.userData.flicker=Math.random()*3;lamp.userData.base=1.65;flickerLights.push(lamp);let fixtureMat=new THREE.MeshStandardMaterial({color:0x647579,emissive:0x172326,emissiveIntensity:.7});let fixture=box(1.25,.09,.32,fixtureMat,0,3.72,z,false);fixture.userData.fixture=true;fixture.userData.baseEmissive=.7;box(.95,.025,.2,new THREE.MeshBasicMaterial({color:0x9ab8b8}),0,3.66,z,false)}
+// Aging details: damp patches, chipped plaster, wall pipes, ceiling cable trays and scattered debris.
+const stainMat=new THREE.MeshStandardMaterial({color:0x101719,transparent:true,opacity:.52,roughness:1,depthWrite:false});const rustMat=new THREE.MeshStandardMaterial({color:0x33201c,roughness:1});
+for(let i=0;i<52;i++){let side=Math.random()<.5?-1:1;let x=side*(12.78-Math.random()*.04),z=-11+Math.random()*22,y=.3+Math.random()*2.9;let patch=new THREE.Mesh(new THREE.PlaneGeometry(.15+Math.random()*1.1,.2+Math.random()*1.5),stainMat);patch.position.set(x,y,z);patch.rotation.y=side<0?Math.PI/2:-Math.PI/2;patch.rotation.z=(Math.random()-.5)*.25;scene.add(patch);worldObjects.push(patch)}
+for(const x of [-11.7,11.7]){let pipe=new THREE.Mesh(new THREE.CylinderGeometry(.055,.055,25,8),rustMat);pipe.rotation.x=Math.PI/2;pipe.position.set(x,3.55,0);scene.add(pipe);worldObjects.push(pipe)}
+for(let i=0;i<38;i++){let x=(Math.random()-.5)*23,z=(Math.random()-.5)*23;if(Math.abs(x)<2&&z>6)continue;let debris=new THREE.Mesh(new THREE.BoxGeometry(.08+Math.random()*.18,.025,.08+Math.random()*.22),i%3?rustMat:mats.metal);debris.position.set(x,-.005,z);debris.rotation.y=Math.random()*Math.PI;scene.add(debris);worldObjects.push(debris)}
+// Old clinical wall signs and peeling, dim room indicators.
+for(const [x,z,label] of [[-12.72,-8,'ICU'],[12.72,-7,'WARD 13'],[-12.72,5,'O.T.'],[12.72,7,'MORGUE']]){let sign=box(.05,.42,1.35,new THREE.MeshStandardMaterial({color:0x192629,roughness:1}),x,2.55,z,false);let led=light(0x8e292b,.18,2,x*.99,2.5,z)}
+// beds in wards
+for(const [x,z] of [[-9,-8],[-9,-5],[9,-8],[9,-5],[-9,1],[9,1],[-9,8],[9,8]]){box(2,.24,3,mats.metal,x,.55,z);box(1.85,.15,2.75,mats.sheet,x,.76,z);box(1.9,.12,.65,mats.bed,x,1.02,z-1.05,false);for(const dx of [-.8,.8])box(.1,.55,.1,mats.metal,x+dx,.22,z-1.25,false)}
+// cabinets, monitors, medical carts
+for(const [x,z] of [[-11,-9],[11,-9],[-11,3],[11,3]]){box(1.15,2.2,.65,mats.metal,x,1.1,z);for(let y=.6;y<2;y+=.55)box(1.17,.05,.68,mats.dark,x,y,z-.01,false)}
+for(const [x,z] of [[-3,-7],[3,-7],[-3,5],[3,5]]){box(.9,1.1,.18,mats.dark,x,2,z-.1,false);box(.72,.72,.04,mats.glow,x,2.05,z-.22,false);box(1.2,.1,.55,mats.metal,x,.8,z,false)}
+// operating theatre table + blood stains (stylized)
+box(2.2,.25,3,mats.metal,-8,1,-1);box(2,.08,2.7,mats.sheet,-8,1.17,-1,false);box(1.2,.08,1.1,mats.red,-8,1.23,-1.6,false);light(0x9f2833,1.1,5,-8,3,-1);
+
+// Low-cost environmental storytelling props: IV poles, wheelchairs, monitor cables and blood trails.
+const ivMat=new THREE.MeshStandardMaterial({color:0x59666a,metalness:.72,roughness:.38});
+for(const [ix,iz] of [[-10,-6],[10,-6],[-10,2],[10,7]]){
+ const pole=new THREE.Mesh(new THREE.CylinderGeometry(.025,.035,1.85,8),ivMat);pole.position.set(ix,1.1,iz);scene.add(pole);worldObjects.push(pole);
+ const hook=new THREE.Mesh(new THREE.TorusGeometry(.13,.018,5,12,Math.PI*1.25),ivMat);hook.position.set(ix,2.03,iz);hook.rotation.x=Math.PI/2;scene.add(hook);worldObjects.push(hook);
+ const bag=new THREE.Mesh(new THREE.BoxGeometry(.18,.28,.09),new THREE.MeshStandardMaterial({color:0x718b89,transparent:true,opacity:.45,roughness:.25}));bag.position.set(ix+.11,1.72,iz);scene.add(bag);worldObjects.push(bag);
+ const foot=new THREE.Mesh(new THREE.CylinderGeometry(.18,.2,.055,10),ivMat);foot.position.set(ix,.12,iz);scene.add(foot);worldObjects.push(foot);
+}
+for(const [wx,wz] of [[-10,-2],[10,4]]){
+ const frame=new THREE.Mesh(new THREE.BoxGeometry(.62,.06,.82),ivMat);frame.position.set(wx,.43,wz);scene.add(frame);worldObjects.push(frame);
+ for(const side of [-1,1]){
+  const wheel=new THREE.Mesh(new THREE.TorusGeometry(.22,.035,7,16),new THREE.MeshStandardMaterial({color:0x15191a,roughness:.9}));wheel.rotation.y=Math.PI/2;wheel.position.set(wx+side*.38,.27,wz);scene.add(wheel);worldObjects.push(wheel);
+  const handle=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,.72,6),ivMat);handle.position.set(wx+side*.3,.78,wz-.36);scene.add(handle);worldObjects.push(handle);
+ }
+}
+for(const [bx,bz,rot] of [[-4,-8,.2],[4,2,-.3],[-7,5,.1],[7,-2,-.2]]){
+ const stain=new THREE.Mesh(new THREE.CircleGeometry(.45+Math.random()*.4,18),new THREE.MeshStandardMaterial({color:0x26090d,roughness:1,transparent:true,opacity:.5,depthWrite:false}));stain.rotation.x=-Math.PI/2;stain.rotation.z=rot;stain.position.set(bx,-.012,bz);scene.add(stain);worldObjects.push(stain);
+ for(let j=0;j<3;j++){const smear=new THREE.Mesh(new THREE.CircleGeometry(.09+Math.random()*.12,12),stain.material);smear.rotation.x=-Math.PI/2;smear.position.set(bx+(Math.random()-.5)*.8,-.01,bz+(Math.random()-.5)*.8);scene.add(smear);worldObjects.push(smear)}
+}
+for(const [lx,lz] of [[-8,-2],[8,2],[-2,9]]){
+ const redLamp=light(0xa51d2c,.25,4,lx,2.9,lz);redLamp.userData.base=.25;redLamp.userData.flicker=Math.random();flickerLights.push(redLamp);
+}
+
+// exit door at south end, unlockable
+exitDoor=box(2.8,3.3,.25,mats.metal,0,1.45,12.72,false);box(2.35,2.9,.08,mats.dark,0,1.5,12.55,false);let sign=box(1.4,.3,.08,new THREE.MeshStandardMaterial({color:0x5a1119,emissive:0x8a1522}),0,3.35,12.45,false);
+// interactable notes are glowing floating evidence
+const noteMat=new THREE.MeshStandardMaterial({color:0xd8e6d8,emissive:0x314a43,roughness:.8});
+function addRecord(x,z,index,title,content){let g=new THREE.Group();let paper=new THREE.Mesh(new THREE.BoxGeometry(.34,.46,.035),noteMat);g.add(paper);let stripe=new THREE.Mesh(new THREE.BoxGeometry(.23,.025,.045),new THREE.MeshStandardMaterial({color:0x9e3038,emissive:0x3c080c}));stripe.position.y=.1;g.add(stripe);g.position.set(x,1.2,z);scene.add(g);interactables.push({mesh:g,x,z,type:'record',index,title,content,used:false});records.push(g);let gl=light(0x82e8d9,.4,2,x,1.6,z);gl.userData.soft=true}
+addRecord(-3,-7,1,'பதிவு 01','நோயாளர் மீனா: “இரவு 3:33-க்கு எல்லா மானிட்டர்களும் ஒரே நேரத்தில் நின்றன. ஆனால் செவிலியர் இன்னும் சுற்றிக்கொண்டிருந்தார்.”');addRecord(10,0,2,'பதிவு 02','டாக்டர் குறிப்பு: “அறை 13 காலியாக உள்ளது என்று பதிவில் எழுதச் சொன்னார்கள். ஆனால் அந்த அறையிலிருந்து தினமும் அழைப்பு வருகிறது.”');addRecord(-8,7,3,'பதிவு 03','கடைசி பதிவு: “அவள் நோயாளி இல்லை. அவள் இறந்த இரவிலிருந்து இந்த மருத்துவமனை அவளை விடவில்லை. அவள் உன்னைப் பெயரால் அழைத்தால் ஓடு.”');
+// Five-stage story progression: the flashlight, Ward 13 key, theatre fuse, and Meera's hidden evidence.
+addPickup(0,7.15,'flashlight','கைக்கோப்பு டார்ச்','டார்ச்சை எடுத்துக்கொள். F அல்லது TORCH மூலம் இயக்கலாம்.');
+addPickup(9,1,'key','வார்டு 13 சாவி','சாவியின் குறியில் “13” பொறிக்கப்பட்டுள்ளது.');
+const wardPanel=box(.35,.42,.08,new THREE.MeshStandardMaterial({color:0x1b2224,emissive:0x3c0c12,emissiveIntensity:.65}),8.1,1.45,-1.1,false);
+interactables.push({mesh:wardPanel,x:8.1,z:-1.1,type:'wardPanel',title:'Ward 13 keypad',used:false});
+addPickup(-8,-1,'fuse','அறுவை அறை ஃபியூஸ்','மின் பெட்டிக்கு தேவைப்படும் ஃபியூஸ்.');
+addPickup(9,8,'sister','மீராவின் ரகசிய பதிவு','மீராவின் குரல் பதிவு: “அக்கா/அண்ணா, செவிலியர் என்னை மறைத்திருக்கிறாள்...”');
+addHideSpot(-10.8,0.4,'மருந்து அலமாரி · HIDE');
+addHideSpot(10.8,-1.2,'சேமிப்பு லாக்கர் · HIDE');
+
+// Exit keypad / red emergency indicator.
+const keypad=box(.22,.32,.08,new THREE.MeshStandardMaterial({color:0x241416,emissive:0x5b1118,emissiveIntensity:.8}),1.35,1.6,12.48,false);
+light(0xff243e,.25,2,1.35,1.8,12.15);
+interactables.push({x:0,z:11.2,type:'exit',mesh:exitDoor,used:false,title:'Emergency Exit'});
+// Nurse apparition: layered gown, tangled hair, sunken face, elongated arms and a cracked nurse cap.
+ ghost=new THREE.Group();const ghostMat=new THREE.MeshStandardMaterial({color:0x9daaa6,transparent:true,opacity:.82,roughness:.92,metalness:0,emissive:0x080f10,side:THREE.DoubleSide});const clothMat=new THREE.MeshStandardMaterial({color:0x667773,transparent:true,opacity:.78,roughness:1,side:THREE.DoubleSide});const skinMat=new THREE.MeshStandardMaterial({color:0x9baba6,roughness:1,transparent:true,opacity:.86});const hairMat=new THREE.MeshStandardMaterial({color:0x080b0d,roughness:1});
+let torso=new THREE.Mesh(new THREE.CapsuleGeometry(.29,.78,5,10),ghostMat);torso.position.y=1.55;ghost.add(torso);let shoulders=new THREE.Mesh(new THREE.SphereGeometry(.43,12,8),clothMat);shoulders.scale.set(1,.5,.62);shoulders.position.y=1.92;ghost.add(shoulders);let head=new THREE.Mesh(new THREE.SphereGeometry(.29,18,14),skinMat);head.scale.set(.84,1.12,.85);head.position.set(0,2.35,.04);ghost.add(head);
+let jaw=new THREE.Mesh(new THREE.ConeGeometry(.2,.34,8),skinMat);jaw.position.set(0,2.12,.06);jaw.rotation.x=Math.PI;ghost.add(jaw);let hair=new THREE.Mesh(new THREE.SphereGeometry(.33,14,10),hairMat);hair.scale.set(1.12,1.08,1.05);hair.position.set(0,2.52,-.055);ghost.add(hair);for(let i=0;i<24;i++){let strand=new THREE.Mesh(new THREE.CylinderGeometry(.012,.035,.7+Math.random()*.45,5),hairMat);strand.userData.hair=true;strand.position.set((Math.random()-.5)*.48,2.08-Math.random()*.18,.13+Math.random()*.15);strand.rotation.z=(Math.random()-.5)*.55;strand.rotation.x=(Math.random()-.5)*.3;ghost.add(strand)}
+let face=new THREE.Mesh(new THREE.PlaneGeometry(.34,.37),new THREE.MeshBasicMaterial({color:0x020405,transparent:true,opacity:.95,side:THREE.DoubleSide}));face.position.set(0,2.34,.286);ghost.add(face);let mouth=new THREE.Mesh(new THREE.CircleGeometry(.067,16),new THREE.MeshBasicMaterial({color:0x16090b}));mouth.scale.set(.65,1.55,1);mouth.position.set(0,2.2,.3);ghost.add(mouth);for(const x of [-.105,.105]){let socket=new THREE.Mesh(new THREE.SphereGeometry(.07,10,8),new THREE.MeshBasicMaterial({color:0x080506}));socket.position.set(x,2.39,.3);ghost.add(socket);let eye=new THREE.Mesh(new THREE.SphereGeometry(.025,8,8),new THREE.MeshBasicMaterial({color:0xff3344}));eye.position.set(x,2.39,.36);ghost.add(eye)}
+let cap=new THREE.Mesh(new THREE.BoxGeometry(.43,.07,.35),new THREE.MeshStandardMaterial({color:0xc5d0c8,roughness:1}));cap.position.set(0,2.68,.015);cap.rotation.x=-.08;ghost.add(cap);let crossV=new THREE.Mesh(new THREE.BoxGeometry(.045,.12,.018),new THREE.MeshBasicMaterial({color:0x7e2029}));crossV.position.set(0,2.69,.2);ghost.add(crossV);let crossH=new THREE.Mesh(new THREE.BoxGeometry(.12,.04,.018),crossV.material);crossH.position.set(0,2.69,.2);ghost.add(crossH);
+let gown=new THREE.Mesh(new THREE.ConeGeometry(.53,1.35,12,2,true),clothMat);gown.position.y=.75;gown.rotation.x=Math.PI;ghost.add(gown);for(const side of [-1,1]){let arm=new THREE.Mesh(new THREE.CapsuleGeometry(.085,.7,4,7),skinMat);arm.userData.limb=true;arm.userData.side=side;arm.position.set(side*.43,1.48,.02);arm.rotation.z=side*.22;ghost.add(arm);for(let j=0;j<4;j++){let finger=new THREE.Mesh(new THREE.CylinderGeometry(.012,.025,.23,5),skinMat);finger.userData.limb=true;finger.userData.side=side;finger.position.set(side*(.45+j*.045),1.08,.08);finger.rotation.z=side*.12;ghost.add(finger)}}
+// Additional unsettling details: blackened eye streaks, exposed rib shadows, long claw-like fingers, torn veil.
+const woundMat=new THREE.MeshStandardMaterial({color:0x26090d,roughness:1,emissive:0x180205});
+for(const side of [-1,1]){let streak=new THREE.Mesh(new THREE.CapsuleGeometry(.018,.18,3,5),woundMat);streak.position.set(side*.11,2.25,.292);streak.rotation.z=side*.12;ghost.add(streak);let cheek=new THREE.Mesh(new THREE.SphereGeometry(.045,8,6),woundMat);cheek.position.set(side*.19,2.2,.25);ghost.add(cheek)}
+for(let r=0;r<5;r++){let rib=new THREE.Mesh(new THREE.TorusGeometry(.22-r*.018,.018,5,12,Math.PI),woundMat);rib.position.set(0,1.65-r*.105,.22);rib.rotation.x=Math.PI/2;ghost.add(rib)}
+for(const side of [-1,1]){let claw=new THREE.Mesh(new THREE.ConeGeometry(.025,.19,5),new THREE.MeshStandardMaterial({color:0x171a18,roughness:.7}));claw.position.set(side*.53,.91,.11);claw.rotation.x=Math.PI;ghost.add(claw)}
+let veil=new THREE.Mesh(new THREE.PlaneGeometry(.48,.8,4,8),new THREE.MeshStandardMaterial({color:0x080d0e,transparent:true,opacity:.78,side:THREE.DoubleSide,roughness:1}));veil.position.set(0,2.13,-.19);veil.rotation.x=-.08;ghost.add(veil);
+ghost.position.set(10,0,-10);scene.add(ghost);let ghostLight=new THREE.PointLight(0x9be9df,.12,2.2);ghostLight.position.set(0,1.9,0);ghost.add(ghostLight);
+// flashlight mounted to camera
+ torchLight=new THREE.SpotLight(0xd8f7f3,58,23,Math.PI/6,.42,1.15);torchLight.position.set(0,0,0);torchLight.target.position.set(0,0,-1);camera.add(torchLight);camera.add(torchLight.target);scene.add(camera);camera.position.set(0,1.65,8);player.x=0;player.z=8;player.yaw=0;player.pitch=0;camera.rotation.set(0,0,0);
+}
+function initAudio(){
+ try{
+  if(audioCtx&&audioCtx.state!=='closed')return;
+  audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  masterGain=audioCtx.createGain();masterGain.gain.value=soundOn?.78:0;masterGain.connect(audioCtx.destination);ambientOsc=[];
+  const sub=audioCtx.createOscillator(),subGain=audioCtx.createGain(),subFilter=audioCtx.createBiquadFilter();sub.type='sine';sub.frequency.value=34;subGain.gain.value=.24;subFilter.type='lowpass';subFilter.frequency.value=68;sub.connect(subFilter);subFilter.connect(subGain);subGain.connect(masterGain);sub.start();ambientOsc.push(sub);
+  const string=audioCtx.createOscillator(),sg=audioCtx.createGain(),sf=audioCtx.createBiquadFilter();string.type='sawtooth';string.frequency.value=55.2;sg.gain.value=.025;sf.type='lowpass';sf.frequency.value=190;string.connect(sf);sf.connect(sg);sg.connect(masterGain);string.start();ambientOsc.push(string);
+  const air=audioCtx.createBufferSource(),ab=audioCtx.createBuffer(1,audioCtx.sampleRate*3,audioCtx.sampleRate),ad=ab.getChannelData(0);for(let i=0;i<ad.length;i++)ad[i]=(Math.random()*2-1)*.2;air.buffer=ab;air.loop=true;const af=audioCtx.createBiquadFilter(),ag=audioCtx.createGain();af.type='bandpass';af.frequency.value=150;af.Q.value=.38;ag.gain.value=.055;air.connect(af);af.connect(ag);ag.connect(masterGain);air.start();ambientOsc.push(air);
+  if(ambientTimer)clearInterval(ambientTimer);
+  ambientTimer=setInterval(()=>{if(!audioCtx||audioCtx.state!=='running'||!soundOn||!started||paused||ended)return;const notes=[41.2,43.65,55,58.27,65.4,77.78];tone(notes[Math.floor(Math.random()*notes.length)],2.4,'triangle',.035,Math.random()<.5?-8:8);if(Math.random()<.28)tone(900+Math.random()*700,.09,'sine',.012,-500)},3400);
+ }catch(e){console.warn('Audio unavailable; using silent-safe gameplay.',e)}
+}
+function tone(freq,dur,type='sine',vol=.3,slide=0){if(!audioCtx||!soundOn)return;let o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(freq,audioCtx.currentTime);if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(1,freq+slide),audioCtx.currentTime+dur);g.gain.setValueAtTime(.0001,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(vol,audioCtx.currentTime+.02);g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+dur);o.connect(g);g.connect(masterGain);o.start();o.stop(audioCtx.currentTime+dur+.03)}
+function noise(dur=.6,vol=.18){if(!audioCtx||!soundOn)return;let n=Math.floor(audioCtx.sampleRate*dur),b=audioCtx.createBuffer(1,n,audioCtx.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*(1-i/n);let s=audioCtx.createBufferSource(),f=audioCtx.createBiquadFilter(),g=audioCtx.createGain();s.buffer=b;f.type='lowpass';f.frequency.value=650;g.gain.value=vol;s.connect(f);f.connect(g);g.connect(masterGain);s.start()}
+
+// Layered procedural banshee/nurse scream. It is synthesized locally so no missing audio file or network request can mute it.
+function playGhostScream(full=false){if(!audioCtx||!soundOn)return;const now=audioCtx.currentTime,dur=full?2.7:1.7;try{const bus=audioCtx.createGain();bus.gain.setValueAtTime(.0001,now);bus.gain.linearRampToValueAtTime(full?1.0:.52,now+.12);bus.gain.setValueAtTime(full?.82:.38,now+.42);bus.gain.exponentialRampToValueAtTime(.0001,now+dur);bus.connect(masterGain);
+// Multi-layered shriek: unstable formant-like harmonics + breath/noise. Synthesized locally; no external sound file.
+for(const [freq,detune,vol] of [[620,-24,.48],[810,31,.34],[310,8,.28],[1240,-43,.12]]){const o=audioCtx.createOscillator(),g=audioCtx.createGain(),f=audioCtx.createBiquadFilter();o.type='sawtooth';o.frequency.setValueAtTime(freq,now);o.frequency.linearRampToValueAtTime(freq*1.65,now+.32);o.frequency.exponentialRampToValueAtTime(freq*.43,now+dur*.8);o.frequency.linearRampToValueAtTime(freq*.58,now+dur);o.detune.value=detune;f.type='bandpass';f.frequency.setValueAtTime(freq*1.4,now);f.frequency.exponentialRampToValueAtTime(freq*.82,now+dur);f.Q.value=2.4;g.gain.value=vol;o.connect(f);f.connect(g);g.connect(bus);o.start(now);o.stop(now+dur+.04)}
+const n=Math.floor(audioCtx.sampleRate*dur),buf=audioCtx.createBuffer(1,n,audioCtx.sampleRate),data=buf.getChannelData(0);for(let i=0;i<n;i++){let t=i/n;data[i]=(Math.random()*2-1)*(Math.sin(Math.PI*t)**.48)*(0.55+Math.random()*.45)}const src=audioCtx.createBufferSource(),filter=audioCtx.createBiquadFilter(),ng=audioCtx.createGain();src.buffer=buf;filter.type='bandpass';filter.frequency.setValueAtTime(2100,now);filter.frequency.exponentialRampToValueAtTime(480,now+dur);filter.Q.value=1.6;ng.gain.value=full?.44:.2;src.connect(filter);filter.connect(ng);ng.connect(bus);src.start(now);
+if(full){tone(38,1.7,'sawtooth',.65,-28);noise(1.8,.55);tone(180,.8,'square',.12,-130);document.body.classList.add('terror');setTimeout(()=>document.body.classList.remove('terror'),700)}}catch(e){noise(full?1.6:.9,full?.5:.22)}}
+function say(text,ms=3200){const el=$('message');el.textContent=text;el.style.opacity=1;clearTimeout(messageTimer);messageTimer=setTimeout(()=>el.style.opacity=0,ms)}
+function jumpScare(){if(performance.now()<scareCooldown)return;scareCooldown=performance.now()+5500;playGhostScream(true);$('scare').classList.remove('active');void $('scare').offsetWidth;$('scare').classList.add('active');tone(90,.7,'sawtooth',.7,-70);noise(.8,.35);health=Math.max(0,health-13);say('அவள் உன்னைப் பார்த்துவிட்டாள். ஓடு!',2200);if(health<=0)finish(false)}
+function dist(a,b){return Math.hypot(a.x-b.x,a.z-b.z)}
+function canMove(x,z){
+ if(x<-12.25||x>12.25||z<-12.25||z>12.25)return false;
+ for(const c of colliders){if(Math.abs(x-c.x)<c.hw+.24&&Math.abs(z-c.z)<c.hd+.24)return false}
+ return true;
+}
+function interact(){
+ if(!started||paused||ended)return;
+ if(isHidden){isHidden=false;hideUntil=0;$('hiddenOverlay').style.opacity='0';say('நீ லாக்கரிலிருந்து வெளியே வந்தாய். அவள் இன்னும் அருகில் இருக்கலாம்.',1800);return}
+ let best=null,bd=2.35;
+ for(const it of interactables){if(it.used)continue;const d=Math.hypot(player.x-it.x,player.z-it.z);if(d<bd){bd=d;best=it}}
+ if(!best){say('அருகில் பயன்படுத்தக்கூடிய பொருள் இல்லை.');return}
+ if(best.type==='hide'){
+   isHidden=true;hideUntil=elapsed+6.5;$('hiddenOverlay').style.opacity='1';move.run=false;move.forward=move.back=move.left=move.right=false;
+   say('ஒளிந்துகொள். அசையாதே. மூச்சை மெதுவாக்கு.',2200);tone(48,.5,'sine',.14);return;
+ }
+ best.used=true;
+ if(best.type==='record'){
+   found++;$('found').textContent=found+' / 3';tone(620,.15,'sine',.22);tone(830,.24,'sine',.2);
+   say(best.title+' — '+best.content,6500);scene.remove(best.mesh);
+   if(found===1){ghostState='hunt';fear=Math.max(fear,35);say('CCTV இயக்கப்பட்டது... செவிலியர் உன் இருப்பை அறிந்துவிட்டாள்.',3500);setTimeout(()=>{if(started&&!ended)playGhostScream(true)},1400)}
+   if(found===3){ghostSpeed=2.15;say('மூன்று பதிவுகளும் கிடைத்தன. சாவியும் ஃபியூஸும் தேவை. அவசர கதவைத் திற.',4200)}
+ }else if(best.type==='flashlight'){
+   hasFlashlight=true;torchOn=true;if(torchLight)torchLight.intensity=45;scene.remove(best.mesh);say('டார்ச் கிடைத்தது. இப்போது ஒளி உன்னை காப்பாற்றவும் காட்டிக்கொடுக்கவும் செய்யும்.',3200);tone(450,.1,'square',.12);
+ }else if(best.type==='key'){
+   hasKey=true;scene.remove(best.mesh);say('வார்டு 13 சாவி கிடைத்தது. பிணவறையில் ஏதோ மறைக்கப்பட்டுள்ளது.',2800);fear=Math.max(fear,18);
+ }else if(best.type==='wardPanel'){
+   if(!hasKey){best.used=false;say('வார்டு 13 பேனலுக்கு சாவி தேவை. அருகிலுள்ள படுக்கைகளையும் பாரு.',2200);return}
+   const code=window.prompt('WARD 13 KEYPAD · Tamil clue: 03:33 AM. Enter the four-digit time code.');
+   if((code||'').trim()==='0333'){ward13Unlocked=true;best.used=true;scene.remove(best.mesh);say('குறியீடு சரி. வார்டு 13 திறந்தது. மின்சார ஃபியூஸை எடுத்துக்கொள்.',3200);tone(520,.12,'square',.12);tone(740,.2,'sine',.1)}
+   else{best.used=false;say('தவறான குறியீடு. சுவரில் நேரத்தைப் பாரு: 03:33.',2200);tone(90,.18,'square',.1);fear=Math.min(100,fear+8)}
+ }else if(best.type==='fuse'){
+   if(!ward13Unlocked){best.used=false;say('முதலில் வார்டு 13-ன் 03:33 குறியீட்டு புதிரைத் தீர்க்க வேண்டும்.',2400);return}
+   hasFuse=true;scene.remove(best.mesh);say('ஃபியூஸ் கிடைத்தது. அவசர வெளியேறும் மின்சாரத்தை மீட்டெடுக்கலாம்.',2800);tone(95,.3,'square',.16);
+ }else if(best.type==='sister'){
+   hasSisterEvidence=true;scene.remove(best.mesh);say('மீராவின் கடைசி பதிவு: “அவள் என்னைக் காப்பாற்றவில்லை... அவள்தான் என்னை மறைத்தாள்.” ரகசிய முடிவுக்கான ஆதாரம் கிடைத்தது.',5000);fear=Math.max(fear,55);
+ }else if(best.type==='exit'){
+   if(found<3||!hasKey||!hasFuse){const need=[];if(found<3)need.push('3 நோயாளர் பதிவுகள்');if(!hasKey)need.push('வார்டு 13 சாவி');if(!hasFuse)need.push('ஃபியூஸ்');say('வெளியேறும் கதவு பூட்டப்பட்டுள்ளது: '+need.join(', ')+' தேவை.');tone(100,.25,'square',.12)}
+   else{exitUnlocked=true;finish(true)}
+ }
+ objectiveStage=hasFlashlight?(!found?2:(!hasKey?3:(!hasFuse?4:5))):1;
+ updateMissionUI();
+}
+function finish(win){
+ ended=true;paused=true;$('ending').style.display='flex';
+ const secret=win&&hasSisterEvidence;
+ $('endTitle').textContent=win?(secret?'உண்மை வெளிவந்தது · SECRET ENDING':'நீ தப்பித்துவிட்டாய் · NORMAL ENDING'):'அவள் உன்னைப் பிடித்துவிட்டாள்.';
+ $('endText').textContent=win?(secret?'மீராவின் பதிவை மீண்டும் இயக்கியபோது, தீ விபத்தில் இறந்ததாகக் கூறப்பட்ட செவிலியர்தான் அவளை உயிருடன் மறைத்திருந்தது தெரிகிறது. மருத்துவமனை கதவு திறக்கிறது. ஆனால் CCTV-யில் இன்னும் இரண்டு நிழல்கள் நிற்கின்றன.':'சாவி, ஃபியூஸ், பதிவுகள்—எல்லாவற்றுடனும் வெளியேறுகிறாய். பின்னால் மருத்துவமனை விளக்குகள் அணைகின்றன. கைப்பேசியில் மீராவின் குரல்: “நீ வெளியே வந்துட்ட... ஆனா நான் இன்னும் உள்ளேதான் இருக்கேன்.”'):'03:33 AM. மானிட்டரில் உன் பெயர் தோன்றுகிறது. கதவுக்குப் பின்னால் செவிலியரின் நிழல் அசைகிறது. இந்த இரவு இன்னும் முடிவடையவில்லை.';
+ if(document.pointerLockElement)document.exitPointerLock();
+ if(whisperAudio){whisperAudio.pause();whisperAudio.currentTime=0}
+ if(win){tone(secret?520:330,.4,'sine',.22);tone(secret?740:440,.7,'sine',.2)}else{tone(65,1,'sawtooth',.4,-50);noise(1,.3)}
+}
+function toggleTorch(){
+ if(!hasFlashlight){say('முதலில் அவசர வார்டில் டார்ச்சை கண்டுபிடி.',1800);return}
+ torchOn=!torchOn;if(torchLight)torchLight.intensity=torchOn&&battery>0?45:0;tone(torchOn?500:240,.08,'square',.1);
+ say(torchOn?'டார்ச் இயக்கப்பட்டது. ஒளி அவளைக் கவரலாம்.':'டார்ச் அணைக்கப்பட்டது. இருளில் அவள் உன்னைப் பார்க்க கடினம்.',1500)
+}
+function start(){
+ $('mapFrame')?.classList.remove('open');$('mapToggle')?.setAttribute('aria-expanded','false');if($('mapToggle'))$('mapToggle').innerHTML='MAP <span>＋</span>';
+ if(started)return;
+ started=true;paused=false;gameStart=performance.now();
+ const fs=document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen;
+ if(fs){try{const p=fs.call(document.documentElement);if(p&&p.catch)p.catch(()=>{})}catch(_){}}
+ try{if(screen.orientation&&screen.orientation.lock){const p=screen.orientation.lock('landscape');if(p&&p.catch)p.catch(()=>{})}}catch(_){}
+ $('start').style.display='none';$('pausePanel').style.display='none';
+ initAudio();if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});
+ if(!whisperAudio){whisperAudio=new Audio('ghost-whisper.mp3');whisperAudio.loop=true;whisperAudio.preload='auto';whisperAudio.volume=0}
+ say('மீராவைத் தேடு. முதலில் டார்ச்சை எடு. ஒளி உன்னை காப்பாற்றும்... அவளையும் அழைக்கும்.',4200);
+ if(innerWidth>700&&renderer&&renderer.domElement.requestPointerLock)renderer.domElement.requestPointerLock();
+ animate();
+}
+function reset(){
+ $('mapFrame')?.classList.remove('open');$('mapToggle')?.setAttribute('aria-expanded','false');if($('mapToggle'))$('mapToggle').innerHTML='MAP <span>＋</span>';
+ if(ambientTimer){clearInterval(ambientTimer);ambientTimer=null}
+ if(whisperAudio){whisperAudio.pause();whisperAudio.currentTime=0;whisperAudio=null}
+ for(const source of ambientOsc){try{source.stop()}catch(_){}}
+ ambientOsc=[];
+ if(audioCtx&&audioCtx.state!=='closed'){try{audioCtx.close()}catch(_){}}
+ audioCtx=null;masterGain=null;
+ if(scene){scene.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){for(const m of (Array.isArray(o.material)?o.material:[o.material]))if(m&&m.dispose)m.dispose()}})}
+ if(renderer){renderer.dispose();renderer.domElement.remove();renderer=null}
+ $('ending').style.display='none';$('start').style.display='flex';$('pausePanel').style.display='none';$('hud').style.display='block';
+ started=false;ended=false;paused=false;health=100;battery=100;found=0;torchOn=false;torchFlickerUntil=0;exitUnlocked=false;doorOpen=false;
+ ghostState='patrol';ghostTarget=null;ghostSpeed=1.7;interactables=[];records=[];colliders=[];worldObjects=[];flickerLights=[];pathNodes=[];pathRefresh=0;
+ ambientOsc=[];elapsed=0;hasFlashlight=false;hasKey=false;hasFuse=false;hasSisterEvidence=false;ward13Unlocked=false;isHidden=false;hideUntil=0;fear=0;objectiveStage=0;lastObjectiveMarkup='';
+ move={forward:false,back:false,left:false,right:false,run:false,crouch:false,axisX:0,axisY:0};player={x:0,z:8,yaw:0,pitch:0};
+ $('hiddenOverlay').style.opacity='0';makeRoom();updateHUD();
+}
+function updateHUD(){
+ $('healthBar').style.width=Math.max(0,health)+'%';$('healthBar').style.background=health<35?'#ff3d57':'#8ff6ef';
+ $('batteryBar').style.width=battery+'%';$('found').textContent=found+' / 3';
+ if(torchLight)torchLight.intensity=torchOn&&battery>0&&hasFlashlight?(performance.now()<torchFlickerUntil?8+Math.random()*10:45):0;
+ const mm=Math.floor(elapsed/60).toString().padStart(2,'0'),ss=Math.floor(elapsed%60).toString().padStart(2,'0');$('clock').textContent='03:33 AM · '+mm+':'+ss;
+ updateMissionUI();
+}
+function animate(){if(!started||ended)return;requestAnimationFrame(animate);let dt=Math.min(clock.getDelta(),.04);if(!paused){elapsed+=dt;updatePlayer(dt);updateGhost(dt);updateWorld(dt);updateHUD();if(elapsed>20&&elapsed<21)say('தொலைவில் ஒரு மானிட்டர் ஒலிக்கிறது...',2000);if(elapsed>40&&found===0&&elapsed<41)say('நீ இங்கே தனியாக இல்லை...',2200);if(hasFlashlight&&battery>0&&torchOn){battery=Math.max(0,battery-dt*.13)}if(battery===0&&torchOn){torchOn=false;torchLight.intensity=0;say('டார்ச் பேட்டரி தீர்ந்துவிட்டது!',2600)}if(health<100&&dist(player,ghost)>7)health=Math.min(100,health+dt*.5)}renderer.render(scene,camera)}
+function updatePlayer(dt){
+ const running=move.run&&!move.crouch&&(!isHidden);
+ const speed=isHidden?0:(move.crouch?1.05:(running?4.15:2.45));
+ let f=move.axisY!==0?-move.axisY:((move.forward?1:0)-(move.back?1:0));
+ let s=move.axisX!==0?move.axisX:((move.right?1:0)-(move.left?1:0));
+ if(isHidden){f=0;s=0}
+ let mag=Math.hypot(f,s);if(mag>1){f/=mag;s/=mag}
+ if(Math.abs(f)>.035||Math.abs(s)>.035){
+  const dx=(-Math.sin(player.yaw)*f+Math.cos(player.yaw)*s)*speed*dt,dz=(-Math.cos(player.yaw)*f-Math.sin(player.yaw)*s)*speed*dt;
+  if(canMove(player.x+dx,player.z))player.x+=dx;if(canMove(player.x,player.z+dz))player.z+=dz;
+  if(running&&Math.random()<dt*1.8)tone(62+Math.random()*22,.055,'sine',.04);
+ }
+ if(isHidden&&elapsed>=hideUntil){isHidden=false;$('hiddenOverlay').style.opacity='0';say('நீ வெளியே வருகிறாய். அவள் உன் தடத்தை மீண்டும் கண்டுபிடித்திருக்கலாம்.',1900)}
+ let zone='EMERGENCY WARD';
+ if(player.x < -5.7 && player.z < 2)zone='OPERATION THEATRE';
+ else if(player.x > 5.7 && player.z < 2)zone='ICU / WARD 13';
+ else if(player.z > 5.5)zone='MORGUE';
+ else if(player.z < -5.5)zone='PATIENT WARDS';
+ if(zone!==currentZone){currentZone=zone;$('ward').textContent=zone;const lines={'EMERGENCY WARD':'அவசர சிகிச்சைப் பிரிவு... மானிட்டர் தானாக இயங்குகிறது.','OPERATION THEATRE':'அறுவை சிகிச்சை அறை. ஃபியூஸ் பெட்டியைத் தேடு.','ICU / WARD 13':'வார்டு 13-ல் சாவி இருக்க வேண்டும். காலியான படுக்கை அசைகிறது.','MORGUE':'பிணவறை. மீராவின் தடயம் இங்கே இருக்கலாம்.','PATIENT WARDS':'நோயாளர் அறைகள். கதவுக்குப் பின்னால் யாரோ கிசுகிசுக்கிறார்கள்.'};say(lines[zone],2200);zoneCueAt=elapsed;if(zone==='ICU / WARD 13'){tone(880,.12,'sine',.08);setTimeout(()=>{if(started&&!ended)tone(610,.18,'sine',.07)},230)}else if(zone==='OPERATION THEATRE'){noise(.7,.14);tone(72,.8,'triangle',.05,-10)}else if(zone==='MORGUE'){tone(180,1.6,'sine',.07,-80)}else tone(310,.18,'sine',.04,-90)}
+ camera.position.set(player.x,move.crouch?1.05:(isHidden?1.1:1.65)+((Math.abs(f)+Math.abs(s)>.1)?Math.sin(elapsed*(running?13:8))*(running?.045:.022):0),player.z);
+ camera.rotation.set(player.pitch,player.yaw,0,'YXZ');
+ const gd=dist(player,ghost);
+ const danger=isHidden?0:Math.max(0,1-gd/12);
+ fear=Math.max(0,Math.min(100,fear+dt*(gd<7&&!isHidden?7.5: -2.2)+(running&&gd<13?.4:0)));
+ $('nearbyWarning').style.opacity=!isHidden&&gd<8?String(Math.min(1,(8-gd)/3)):0;
+ $('heartbeatOverlay').style.opacity=!isHidden&&gd<9?String(Math.min(.75,(9-gd)/10)):0;
+ $('fearBar').style.width=fear+'%';
+ if(whisperAudio){const targetVolume=(!isHidden&&gd<13&&soundOn)?Math.max(0,Math.min(.9,(13-gd)/10))*.85:0;whisperAudio.volume=targetVolume;if(targetVolume>.025&&whisperAudio.paused)whisperAudio.play().catch(()=>{});if(targetVolume<=.025&&!whisperAudio.paused)whisperAudio.pause()}
+ if(!isHidden&&gd<3.2){health-=dt*(ghostState==='hunt'?10:4);if(Math.random()<dt*2)tone(42+Math.random()*18,.16,'sine',.14);if(gd<2.4&&Math.random()<dt*.9)jumpScare()}
+ if(!isHidden&&gd<7&&Math.random()<dt*.25)noise(.35,.045);
+ if(!isHidden&&gd<10&&performance.now()-lastScream>6500&&Math.random()<dt*.045){lastScream=performance.now();playGhostScream(false);say('...அவள் உன் பின்னால் இருக்கிறாள்...',1800)}
+}
+function updateGhost(dt){
+ let d=dist(player,ghost);
+ if(isHidden){ghostState='investigate';ghost.visible=true;if(elapsed>pathRefresh+2){ghostTarget={x:player.x+(Math.random()-.5)*5,z:player.z+(Math.random()-.5)*5};pathRefresh=elapsed}if(d<2.5){ghostState='hunt'}else return}
+ if(elapsed>9&&ghostState==='patrol')ghostState='investigate';
+ if(found>0||hasKey||hasFuse||d<9)ghostState='hunt';
+ if(ghostState==='patrol'){
+   const t=elapsed*.22;const px=7+Math.sin(t)*2.1,pz=-5+Math.cos(t*.8)*1.6;
+   if(canMove(px,pz)){ghost.position.x=px;ghost.position.z=pz}
+   if(d<12){ghostState='investigate';ghostTarget={x:player.x,z:player.z}}
+ }else if(ghostState==='investigate'){
+   if(!ghostTarget||elapsed-pathRefresh>1.3){ghostTarget={x:player.x,z:player.z};pathRefresh=elapsed;pathNodes=findGhostPath(ghost.position.x,ghost.position.z,ghostTarget.x,ghostTarget.z)}
+   followGhostPath(dt,1.15);
+   if(d<10||found>0||elapsed>22)ghostState='hunt';
+ }else if(ghostState==='hunt'){
+   if(!isHidden&&elapsed-pathRefresh>.85){pathRefresh=elapsed;pathNodes=findGhostPath(ghost.position.x,ghost.position.z,player.x,player.z)}
+   if(!isHidden)followGhostPath(dt,ghostSpeed+(d<7?.35:0));
+   if(d>13&&performance.now()-lastManifestAt>13000&&Math.random()<.035){
+     lastManifestAt=performance.now();
+     const candidates=[{x:player.x+Math.cos(player.yaw)*-1*7,z:player.z+Math.sin(player.yaw)*-1*7},{x:player.x+Math.cos(player.yaw)*7,z:player.z+Math.sin(player.yaw)*7},{x:player.x+4,z:player.z-4}];
+     const spot=candidates.find(p=>Math.hypot(p.x-player.x,p.z-player.z)>5&&Math.hypot(p.x-player.x,p.z-player.z)<10&&canMove(p.x,p.z));
+     if(spot){ghost.position.set(spot.x,0,spot.z);ghost.visible=true;ghostState='investigate';pathNodes=[];playGhostScream(false);say('காலியான வழித்தடத்தில் யாரோ நிற்கிறார்...',2100)}
+   }
+ }
+ d=dist(player,ghost);
+ ghost.position.y=Math.sin(elapsed*(ghostState==='hunt'?7.5:3.2))*(ghostState==='hunt'?.09:.035);
+ ghost.rotation.y=Math.atan2(player.x-ghost.position.x,player.z-ghost.position.z);
+ const attackRange=isHidden?0:1.55;
+ ghost.scale.setScalar(d<4?1+Math.sin(elapsed*15)*.035:1);
+ ghost.children.forEach((part,i)=>{if(part.material&&part.material.transparent){const targetOpacity=d<9?.94:.64;part.material.opacity=Math.max(.2,Math.min(1,targetOpacity+Math.sin(elapsed*4+i)*.035))}if(part.userData.limb)part.rotation.z=part.userData.side*(.16+Math.sin(elapsed*(ghostState==='hunt'?9:2.4)+i)*.12);if(part.userData.hair)part.rotation.z=part.userData.baseRot+Math.sin(elapsed*2+i)*.035});
+ if(!isHidden&&d<attackRange&&performance.now()-lastAttackAt>2300){
+   lastAttackAt=performance.now();health=Math.max(0,health-22);fear=Math.min(100,fear+28);jumpScare();playGhostScream(true);
+   say('அவள் உன்னைத் தாக்கினாள்! திரும்பி ஓடு அல்லது ஒளிந்துகொள்!',2400);
+   if(health<=0)finish(false);
+ }else if(!isHidden&&d<6.5&&performance.now()-lastScream>4700){
+   lastScream=performance.now();playGhostScream(false);if(Math.random()<.5)say('மீரா... இங்கே வா...',1700);
+ }
+}
+function findGhostPath(sx,sz,tx,tz){
+ const step=.75,min=-12,max=12,count=Math.floor((max-min)/step)+1;
+ const toCell=(v)=>Math.max(0,Math.min(count-1,Math.round((v-min)/step)));
+ const fromCell=(x,z)=>({x:min+x*step,z:min+z*step});
+ let ax=toCell(sx),az=toCell(sz),bx=toCell(tx),bz=toCell(tz);
+ const valid=(x,z)=>{const p=fromCell(x,z);return canMove(p.x,p.z)};
+ if(!valid(ax,az)){let foundStart=null;for(let r=1;r<5&&!foundStart;r++)for(let dz=-r;dz<=r&&!foundStart;dz++)for(let dx=-r;dx<=r;dx++){let x=ax+dx,z=az+dz;if(x>=0&&z>=0&&x<count&&z<count&&valid(x,z)){foundStart={x,z};break}}if(foundStart){ax=foundStart.x;az=foundStart.z}}
+ if(!valid(bx,bz)){let nearest=null;for(let r=1;r<5&&!nearest;r++)for(let dz=-r;dz<=r&&!nearest;dz++)for(let dx=-r;dx<=r;dx++){let x=bx+dx,z=bz+dz;if(x>=0&&z>=0&&x<count&&z<count&&valid(x,z)){nearest={x,z};break}}if(nearest){bx=nearest.x;bz=nearest.z}}
+ const key=(x,z)=>x+','+z,queue=[{x:ax,z:az}],prev=new Map([[key(ax,az),null]]);let qi=0,foundGoal=false;
+ const dirs=[[1,0],[-1,0],[0,1],[0,-1]];
+ while(qi<queue.length&&qi<1800){const cur=queue[qi++];if(cur.x===bx&&cur.z===bz){foundGoal=true;break}for(const [dx,dz] of dirs){const x=cur.x+dx,z=cur.z+dz,k=key(x,z);if(x<0||z<0||x>=count||z>=count||prev.has(k)||!valid(x,z))continue;prev.set(k,key(cur.x,cur.z));queue.push({x,z})}}
+ if(!foundGoal)return [];
+ const out=[];let k=key(bx,bz);while(k){const [x,z]=k.split(',').map(Number),p=fromCell(x,z);out.push(p);k=prev.get(k)}out.reverse();return out.slice(1);
+}
+function followGhostPath(dt,speed){
+ if(!pathNodes||!pathNodes.length)return;
+ let p=pathNodes[0],dx=p.x-ghost.position.x,dz=p.z-ghost.position.z,d=Math.hypot(dx,dz);
+ if(d<.24){pathNodes.shift();return}
+ const step=Math.min(d,speed*dt),nx=ghost.position.x+dx/d*step,nz=ghost.position.z+dz/d*step;
+ if(canMove(nx,ghost.position.z))ghost.position.x=nx;
+ if(canMove(ghost.position.x,nz))ghost.position.z=nz;
+}
+function moveGhostToward(tx,tz,dt,spd){let dx=tx-ghost.position.x,dz=tz-ghost.position.z,l=Math.hypot(dx,dz)||1;let nx=ghost.position.x+dx/l*spd*dt,nz=ghost.position.z+dz/l*spd*dt;if(nx>-12&&nx<12&&nz>-12&&nz<12){ghost.position.x=nx;ghost.position.z=nz}}
+function updateWorld(dt){
+ for(const l of flickerLights){
+  l.userData.flicker=(l.userData.flicker||0)-dt;
+  if(l.userData.flicker<=0){
+   l.userData.flicker=.045+Math.random()*.65;
+   const blackout=Math.random()<.14,hardStutter=Math.random()<.07;
+   l.intensity=l.userData.base*(blackout?0:(hardStutter?1.8:(.25+Math.random()*1.15)));
+   if(blackout&&soundOn&&Math.random()<.55){tone(45,.09,'square',.035);if(Math.random()<.4)noise(.12,.025)}
+  }
+ }
+ for(const o of worldObjects){
+  if(o.userData.fixture){
+   const nearest=flickerLights.reduce((best,l)=>Math.abs(l.position.z-o.position.z)<Math.abs(best.position.z-o.position.z)?l:best,flickerLights[0]);
+   o.material.emissiveIntensity=nearest&&nearest.intensity<.08?.02:(nearest&&nearest.intensity>1?.95:.25+Math.random()*.25);
+  }
+ }
+ const d=dist(player,ghost);
+ if(torchLight&&torchOn&&d<8&&Math.random()<dt*(8-d)*.55)torchFlickerUntil=performance.now()+90+Math.random()*120;
+ if(torchLight&&torchOn&&battery>0)torchLight.intensity=performance.now()<torchFlickerUntil?8+Math.random()*10:45;
+ if(Math.random()<dt*.025)tone(90+Math.random()*80,.18,'sine',.025);
+ drawMiniMap();
+}
+function drawMiniMap(){const c=$('miniMap');if(!c||!scene||!ghost)return;const ctx=c.getContext('2d'),w=c.width,h=c.height;ctx.clearRect(0,0,w,h);ctx.fillStyle='rgba(3,12,16,.9)';ctx.fillRect(0,0,w,h);ctx.strokeStyle='rgba(115,151,158,.3)';ctx.lineWidth=1;for(let i=20;i<w;i+=30){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,h);ctx.stroke();ctx.beginPath();ctx.moveTo(0,i);ctx.lineTo(w,i);ctx.stroke()}const px=x=>(x+13)/26*w,py=z=>(z+13)/26*h;ctx.strokeStyle='rgba(125,157,161,.8)';ctx.lineWidth=9;ctx.strokeRect(px(-12),py(-12),px(12)-px(-12),py(12)-py(-12));ctx.strokeStyle='rgba(50,78,84,.9)';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(px(0),py(-12));ctx.lineTo(px(0),py(12));ctx.moveTo(px(-12),py(0));ctx.lineTo(px(12),py(0));ctx.stroke();for(const it of interactables){if(it.used)continue;ctx.fillStyle='#8ff6ef';ctx.beginPath();ctx.arc(px(it.x),py(it.z),4,0,Math.PI*2);ctx.fill()}ctx.fillStyle='#ff334f';ctx.shadowColor='#ff334f';ctx.shadowBlur=12;ctx.beginPath();ctx.arc(px(ghost.position.x),py(ghost.position.z),5,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.fillStyle='#8ff6ef';ctx.beginPath();ctx.arc(px(player.x),py(player.z),5,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#8ff6ef';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(px(player.x),py(player.z));ctx.lineTo(px(player.x)-Math.sin(player.yaw)*12,py(player.z)-Math.cos(player.yaw)*12);ctx.stroke();}
+window.addEventListener('keydown',e=>{let k=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();if(k==='w'||k==='arrowup')move.forward=true;if(k==='s'||k==='arrowdown')move.back=true;if(k==='a'||k==='arrowleft')move.left=true;if(k==='d'||k==='arrowright')move.right=true;if(k==='shift')move.run=true;if(k==='c')move.crouch=true;if(k==='e')interact();if(k==='f')toggleTorch();if(k==='escape'&&started&&!ended){paused=!paused;$('pausePanel').style.display=paused?'flex':'none'}});window.addEventListener('keyup',e=>{let k=e.key.toLowerCase();if(k==='w'||k==='arrowup')move.forward=false;if(k==='s'||k==='arrowdown')move.back=false;if(k==='a'||k==='arrowleft')move.left=false;if(k==='d'||k==='arrowright')move.right=false;if(k==='shift')move.run=false;if(k==='c')move.crouch=false});document.addEventListener('mousemove',e=>{if(document.pointerLockElement===renderer?.domElement&&started&&!paused){player.yaw-=e.movementX*.0022;player.pitch-=e.movementY*.0022;player.pitch=Math.max(-1.25,Math.min(1.25,player.pitch))}});
+$('play').addEventListener('click',start);$('again').addEventListener('click',reset);
+$('mapToggle').addEventListener('click',()=>{const f=$('mapFrame'),open=!f.classList.contains('open');f.classList.toggle('open',open);$('mapToggle').setAttribute('aria-expanded',String(open));$('mapToggle').innerHTML=open?'MAP <span>−</span>':'MAP <span>＋</span>'});
+$('dismissLaunchWarning').addEventListener('click',()=>{$('launchWarning').style.display='none'});
+if(location.protocol==='file:'||location.protocol==='content:'){$('launchWarning').style.display='flex'}$('pauseButton').addEventListener('click',()=>{if(!started||ended)return;paused=true;$('pausePanel').style.display='flex';if(document.pointerLockElement)document.exitPointerLock()});$('resumeGame').addEventListener('click',()=>{paused=false;$('pausePanel').style.display='none';if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume()});$('restartGame').addEventListener('click',()=>{reset()});$('pauseSound').addEventListener('click',()=>{$('soundToggle').click();$('pauseSound').textContent='SOUND: '+(soundOn?'ON':'OFF')});$('quitGame').addEventListener('click',()=>{paused=true;started=false;$('pausePanel').style.display='none';$('hud').style.display='none';$('touchControls').style.display='none';$('actionControls').style.display='none';$('start').style.display='flex';if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(()=>{})});$('soundToggle').addEventListener('click',()=>{soundOn=!soundOn;$('soundToggle').textContent='SOUND: '+(soundOn?'ON':'OFF');if($('pauseSound'))$('pauseSound').textContent='SOUND: '+(soundOn?'ON':'OFF');if(masterGain)masterGain.gain.value=soundOn?.78:0;if(!soundOn&&whisperAudio){whisperAudio.pause()}else if(soundOn&&audioCtx&&audioCtx.state==='suspended')audioCtx.resume().catch(()=>{})});$('interact').addEventListener('click',interact);$('torch').addEventListener('click',toggleTorch);$('run').addEventListener('touchstart',e=>{e.preventDefault();move.run=true});$('run').addEventListener('touchend',()=>move.run=false);
+document.querySelectorAll('[data-move]').forEach(b=>{let key=b.dataset.move;b.addEventListener('touchstart',e=>{e.preventDefault();move[key]=true},{passive:false});b.addEventListener('touchend',e=>{e.preventDefault();move[key]=false},{passive:false});b.addEventListener('touchcancel',()=>move[key]=false)});
+// Twin analogue joysticks for landscape mobile play. Left controls movement; right controls camera.
+function bindJoystick(baseId,knobId,onMove,lookMode=false){const base=$(baseId),knob=$(knobId);let activeId=null,center={x:0,y:0},radius=1,last={x:0,y:0};const neutral=()=>{if(activeId===null)return;activeId=null;knob.style.transform='translate(-50%,-50%)';base.classList.remove('engaged');onMove(0,0,0,0,true)};function update(e){const rawX=e.clientX-center.x,rawY=e.clientY-center.y,len=Math.hypot(rawX,rawY),scale=len>radius?radius/(len||1):1,dx=rawX*scale,dy=rawY*scale,nx=dx/radius,ny=dy/radius;knob.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;const ddx=e.clientX-last.x,ddy=e.clientY-last.y;last={x:e.clientX,y:e.clientY};onMove(nx,ny,ddx,ddy,false)}base.addEventListener('pointerdown',e=>{if(!started||paused||ended)return;e.preventDefault();activeId=e.pointerId;last={x:e.clientX,y:e.clientY};try{base.setPointerCapture(e.pointerId)}catch(_){}const r=base.getBoundingClientRect();center={x:r.left+r.width/2,y:r.top+r.height/2};radius=Math.max(24,r.width*.39);base.classList.add('engaged');update(e)});base.addEventListener('pointermove',e=>{if(e.pointerId===activeId){e.preventDefault();update(e)}});base.addEventListener('pointerup',e=>{if(e.pointerId===activeId)neutral()});base.addEventListener('lostpointercapture',neutral);base.addEventListener('pointercancel',neutral)}
+bindJoystick('moveJoy','moveKnob',(x,y,dx,dy,up)=>{move.axisX=up?0:(Math.abs(x)<.045?0:x);move.axisY=up?0:(Math.abs(y)<.045?0:y);move.forward=move.axisY<-.08;move.back=move.axisY>.08;move.left=move.axisX<-.08;move.right=move.axisX>.08});bindJoystick('lookJoy','lookKnob',(x,y,dx,dy,up)=>{if(!started||paused||up)return;player.yaw-=dx*.009;player.pitch=Math.max(-1.2,Math.min(1.2,player.pitch+dy*.006))},true);
+$('touchInteract').addEventListener('pointerdown',e=>{e.preventDefault();interact()});$('touchTorch').addEventListener('pointerdown',e=>{e.preventDefault();toggleTorch()});$('touchHide').addEventListener('pointerdown',e=>{e.preventDefault();let nearest=interactables.filter(it=>!it.used&&it.type==='hide').sort((a,b)=>Math.hypot(player.x-a.x,player.z-a.z)-Math.hypot(player.x-b.x,player.z-b.z))[0];if(isHidden)interact();else if(nearest&&Math.hypot(player.x-nearest.x,player.z-nearest.z)<2.8)interact();else{move.crouch=!move.crouch;say(move.crouch?'குனிந்து மெதுவாக நகர்கிறாய்.':'நிமிர்ந்து நிற்கிறாய்.',1000)}});$('touchRun').addEventListener('pointerdown',e=>{e.preventDefault();move.run=true;try{$('touchRun').setPointerCapture(e.pointerId)}catch(_){}});['pointerup','pointercancel','pointerleave','lostpointercapture'].forEach(ev=>$('touchRun').addEventListener(ev,()=>move.run=false));
+let lastTouch=null;rendererlessTouchSetup();function rendererlessTouchSetup(){document.addEventListener('touchstart',e=>{if(e.target.closest('button')||e.target.closest('#touchControls')||e.target.closest('#actionControls'))return;let t=e.touches[0];lastTouch={x:t.clientX,y:t.clientY}},{passive:true});document.addEventListener('touchmove',e=>{if(!lastTouch||!started||paused)return;if(e.target.closest('#touchControls')||e.target.closest('#actionControls'))return;let t=e.touches[0];player.yaw-=(t.clientX-lastTouch.x)*.005;player.pitch-=(t.clientY-lastTouch.y)*.003;player.pitch=Math.max(-1.15,Math.min(1.15,player.pitch));lastTouch={x:t.clientX,y:t.clientY}},{passive:true});document.addEventListener('touchend',()=>lastTouch=null)}
+window.addEventListener('webglcontextlost',e=>{e.preventDefault();paused=true;$('pausePanel').style.display='flex';say('Graphics paused. Resume after the device recovers.',2600)},false);window.addEventListener('webglcontextrestored',()=>{if(started&&!ended){paused=false;$('pausePanel').style.display='none';clock?.getDelta()}},false);
+window.addEventListener('resize',()=>{if(camera&&renderer){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)}});
+document.addEventListener('contextmenu',e=>e.preventDefault());
+makeRoom();updateHUD();
+</script>
+</body></html>
+
